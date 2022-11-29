@@ -1,0 +1,11 @@
+---
+- name: Get hosts to initialize cluster
+  hosts: localhost
+  gather_facts: true
+  become: false
+
+  tasks:
+
+  - name: Install cluster
+    ansible.builtin.import_role:
+      name: initialize_cluster

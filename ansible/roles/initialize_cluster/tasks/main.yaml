@@ -1,0 +1,48 @@
+---
+- name: Ensure openshift-install exists on host with version 4.10
+  block:
+    - name: Check for openshift-install
+      ansible.builtin.stat:
+        path: "/usr/bin/openshift-install"
+      register: ocs_install
+
+    - name: Fail if ocs_install does not exist
+      ansible.builtin.fail:
+        msg:
+          - "Openshift install command is not installed"
+          - "Please install at least version 4.10.x"
+      when: ocs_install is not defined
+
+- name: Clean up existing install-dir
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/install-dir"
+    state: absent
+
+- name: Create bin, install-dir and downloads folders
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/install-dir"
+    state: directory
+    mode: '0755'
+
+- name: Create install-config file from template
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/roles/initialize_cluster/templates/install-config.yaml.j2"
+    dest: "{{ playbook_dir }}/install-dir/install-config.yaml"
+    mode: '0644'
+
+- name: Backup the install-config.yaml file
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/install-dir/install-config.yaml"
+    dest: "{{ playbook_dir }}/install-dir/install-config.yaml.orig"
+    mode: '0664'
+
+- name: Backup the install-config.yaml file
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/install-dir/install-config.yaml"
+    dest: "{{ playbook_dir }}/install-dir/install-config.yaml.orig"
+    mode: '0664'
+  when: (registry is not defined) or (registry.enabled is not defined) or (registry.enabled == false) # noqa 601
+
+- name: Initialize IPI Cluster installation
+  ansible.builtin.command: "/usr/bin/openshift-install create cluster --dir={{ playbook_dir }}/install-dir --log-level=info"
+  changed_when: false

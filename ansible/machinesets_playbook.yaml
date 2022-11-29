@@ -1,0 +1,30 @@
+---
+- name: Get hosts for base
+  hosts: localhost
+  gather_facts: true
+
+- name: Perform base config
+  import_playbook:
+    base_playbook.yaml
+
+- name: Get hosts for playbook
+  hosts: localhost
+  gather_facts: false
+  become: false
+
+  vars_prompt:
+
+    - name: role_assigned
+      prompt: "What role should be assigned to machinesets?"
+      default: "worker"
+      private: false
+
+  tasks:
+
+    - name: Results of Prompt
+      ansible.builtin.debug:
+        msg: "You are creating {{ role_assigned }} machinesets"
+
+    - name: Create Machinesets
+      ansible.builtin.import_role:
+        name: machinesets

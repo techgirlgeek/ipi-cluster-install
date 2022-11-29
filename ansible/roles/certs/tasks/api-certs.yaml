@@ -1,0 +1,14 @@
+---
+
+- name: Create openshift-api-secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ KUBECONFIG }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/api_certs/templates/api-secret.yaml.j2') }}"
+
+- name: Update API Server with Cert
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition: "{{ lookup('kubernetes.core.kustomize', dir=api_cert_dir) }}"
+  register: api_cert_kustomize

@@ -1,0 +1,19 @@
+- op: add
+  path: /spec/identityProviders/-
+  value:
+    name: OpenShiftAD
+    mappingMethod: claim
+    type: LDAP
+    ldap:
+      attributes:
+        id:
+        - sAMAccountName
+        name:
+        - cn
+        preferredUsername:
+        - sAMAccountName
+      bindDN: "CN=ocpadlookup,CN=Users,DC=company,DC=com"
+      bindPassword:
+        name: ldap-secret
+      insecure: true
+      url: "ldap://ldap_url.company.com/dc=company,dc=com?sAMAccountName"

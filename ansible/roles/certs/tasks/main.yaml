@@ -1,0 +1,9 @@
+---
+- name: Apply Proxy cert bundle to cluster
+  ansible.builtin.include_tasks: proxy-certs.yaml
+
+- name: Apply wildcard app certs to cluster
+  ansible.builtin.include_tasks: app-certs.yaml
+
+- name: Apply API certs to cluster
+  ansible.builtin.include_tasks: api-certs.yaml

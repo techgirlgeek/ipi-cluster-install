@@ -1,0 +1,31 @@
+---
+- name: Run command locally
+  delegate_to: localhost
+  when: ocp_login is undefined
+  block:
+    - name: Authenticate with OCP
+      community.okd.openshift_auth:
+        host: "https://api.{{ install_config_cluster.cluster_name }}.{{ install_config.base_domain }}:6443"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: false
+      register: ocp_login
+
+    - name: Get nodes
+      kubernetes.core.k8s_info:
+        api_key: "{{ ocp_login.openshift_auth.api_key }}"
+        kind: "Node"
+        validate_certs: false
+        label_selectors:
+          - "node-role.kubernetes.io/infra"
+      register: infra_nodes
+
+    - name: Set infra node names
+      ansible.builtin.set_fact:
+        node_names: "{{ infra_nodes.resources | map(attribute='metadata.name') }}"
+
+- name: Apply taints to nodes
+  ansible.builtin.include_tasks: taints.yaml
+
+- name: Apply tolerations
+  ansible.builtin.include_tasks: tolerations.yaml

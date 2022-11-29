@@ -1,0 +1,48 @@
+---
+- name: Get KUBECONFIG
+  ansible.builtin.set_fact:
+    kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+  when: kubeconfig is undefined
+
+- name: Ensure KUBECONFIG env variable has been set
+  ansible.builtin.assert:
+    that:
+      - "kubeconfig != ''"
+      - "{{ lookup('file', kubeconfig) | from_yaml }} != ''"
+    fail_msg: "Please set kubeconfig to valid config file"
+
+- name: Ensure user is logged into cluster
+  block:
+    # Set facts
+    - name: Get the user running the playbook
+      ansible.builtin.command: oc whoami
+      register: oc_username
+
+    - name: Set username fact
+      ansible.builtin.set_fact:
+        oc_username: "{{ oc_username.stdout }}"
+
+    - name: Set cluster fact for reuse
+      ansible.builtin.set_fact:
+        cluster: "{{ cluster }}"
+
+    - name: Tell me the username
+      ansible.builtin.debug:
+        var: oc_username
+
+    - name: Working on which cluster?
+      ansible.builtin.debug:
+        var: cluster
+
+  rescue:
+    - name: Authenticate with OCP
+      community.okd.openshift_auth:
+        host: "https://api.{{ install_config_cluster.cluster_name }}.{{ install_config.base_domain }}:6443"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        validate_certs: false
+      register: ocp_login
+
+    - name: Username is set to
+      ansible.builtin.debug:
+        var: ocp_login.openshift_auth.username

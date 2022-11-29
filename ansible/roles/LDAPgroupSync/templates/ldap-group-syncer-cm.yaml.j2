@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ldap-group-syncer
+  namespace: {{ group_sync.namespace }}
+  labels:
+    app: cronjob-ldap-group-sync
+data:
+  sync.yaml: |
+    kind: LDAPSyncConfig
+    apiVersion: v1
+    url: {{ group_sync.sync_config_url }}
+    bindDN: {{ group_sync.bindDN }}
+    insecure: true
+    bindPassword:
+      file: "/etc/secrets/bindPassword"
+    augmentedActiveDirectory:
+      groupsQuery:
+          baseDN: "{{ group_sync.usersQuery.baseDN }}"
+          scope: sub
+          derefAliases: never
+          pageSize: 0
+      groupUIDAttribute: dn
+      groupNameAttributes: [ sAMAccountName ]
+      usersQuery:
+          baseDN: "{{ group_sync.usersQuery.baseDN }}"
+          scope: sub
+          derefAliases: never
+          filter: (objectClass=person)
+          pageSize: 0
+      userNameAttributes: [ sAMAccountName ]
+      groupMembershipAttributes: [ memberOf ]

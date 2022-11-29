@@ -1,0 +1,13 @@
+---
+- name: Taint infra nodes
+  kubernetes.core.k8s_taint:
+    state: present
+    name: "{{ item }}"
+    taints:
+      - effect: NoExecute
+        key: "infra"
+        value: "reserved"
+      - effect: NoSchedule
+        key: "infra"
+        value: "reserved"
+  loop: "{{ node_names }}"

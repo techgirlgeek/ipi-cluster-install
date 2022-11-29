@@ -1,0 +1,21 @@
+---
+- name: Get hosts for base plays
+  hosts: localhost
+
+- name: Perform base config
+  import_playbook:
+    base_playbook.yaml
+
+- name: Get hosts for playbook
+  hosts: localhost
+  gather_facts: true
+  become: false
+
+  environment:
+    K8S_AUTH_SSL_CA_CERT: "{{ K8S_AUTH_SSL_CA_CERT }}"
+
+  tasks:
+
+    - name: Apply taints and tolerations
+      ansible.builtin.import_role:
+        name: node_config

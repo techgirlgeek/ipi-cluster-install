@@ -1,0 +1,20 @@
+---
+- name: Create LDAP Secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ KUBECONFIG }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/ldap/templates/ldap-secret.yaml.j2') }}"
+
+# Uncomment for Secure LDAP
+# - name: Create LDAP ConfigMap
+#   k8s:
+#     kubeconfig: "{{ KUBECONFIG }}"
+#     state: present
+#     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/ldap/templates/ldap-configmap.yaml.j2') }}"
+
+- name: Create Kustomize Resources for Lookup
+  kubernetes.core.k8s:
+    kubeconfig: "{{ KUBECONFIG }}"
+    state: present
+    definition: "{{ lookup('kubernetes.core.kustomize', dir=ldap_dir) }}"
+  register: ldap_kustomize

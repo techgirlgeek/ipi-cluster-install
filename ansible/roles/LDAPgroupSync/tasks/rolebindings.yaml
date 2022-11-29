@@ -1,0 +1,6 @@
+---
+- name: Create Role Bindings using Kustomize
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('kubernetes.core.kustomize', dir=role_binding_dir) }}"
+  register: role_binding_kustomize

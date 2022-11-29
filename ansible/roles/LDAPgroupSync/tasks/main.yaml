@@ -1,0 +1,87 @@
+---
+- name: Create LDAP Group Sync Namespace
+  kubernetes.core.k8s:
+    name: "{{ group_sync.namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create LDAP Group Syncer SA
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: ldap-group-syncer
+        namespace: "{{ group_sync.namespace }}"
+        labels:
+          app: cronjob-ldap-group-sync
+
+- name: Create LDAP Group Syncer ClusterRole
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: ldap-group-syncer
+        labels:
+          app: cronjob-ldap-group-sync
+      rules:
+        - apiGroups:
+            - ''
+            - user.openshift.io
+          resources:
+            - groups
+          verbs:
+            - get
+            - list
+            - create
+            - update
+
+- name: Create LDAP Group Sync ClusterRoleBinding
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: ldap-group-syncer
+        labels:
+          app: cronjob-ldap-group-sync
+      subjects:
+        - kind: ServiceAccount
+          name: ldap-group-syncer
+          namespace: "{{ group_sync.namespace }}"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: ldap-group-syncer
+
+- name: Create ldap-group-syncer ConfigMap
+  kubernetes.core.k8s:
+    kubeconfig: "{{ KUBECONFIG }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-group-syncer-cm.yaml.j2') }}"
+
+- name: Create ldap-group-whitelist
+  kubernetes.core.k8s:
+    kubeconfig: "{{ KUBECONFIG }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-group-syncer-whitelist.yaml.j2') }}"
+
+- name: Create ldap-sync-secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ KUBECONFIG }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-sync-secret.yaml.j2') }}"
+
+- name: Deploy LDAP CronJob and Resources
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('kubernetes.core.kustomize', dir=groupsync_dir) }}"
+  register: groupsync_kustomize
+
+- name: Setup Role Bindings for LDAP groups
+  ansible.builtin.include_tasks: rolebindings.yaml

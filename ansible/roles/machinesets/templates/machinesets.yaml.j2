@@ -1,0 +1,64 @@
+# Make sure to replace vsphere-upi-ghsrv with your specific Cluster API name
+# https://access.redhat.com/solutions/5307621
+
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  creationTimestamp: null
+  labels:
+    machine.openshift.io/cluster-api-cluster: {{ infraID }}
+  name: {{ infraID }}-{{ role_assigned }}
+  namespace: openshift-machine-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: {{ infraID }}
+      machine.openshift.io/cluster-api-machineset: {{ infraID }}-{{ role_assigned }}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        machine.openshift.io/cluster-api-cluster: {{ infraID }}
+        machine.openshift.io/cluster-api-machine-role: {{ role_assigned }}
+        machine.openshift.io/cluster-api-machine-type: {{ role_assigned }}
+        machine.openshift.io/cluster-api-machineset: {{ infraID }}-{{ role_assigned }}
+    spec:
+      metadata:
+        creationTimestamp: null
+        labels:
+          node-role.kubernetes.io/{{ role_assigned }}: ""
+{% if role_assigned == 'infra' %}
+      taints:
+      - key: {{ role_assigned }}
+        effect: NoSchedule
+        value: "reserved"
+      - key: {{ role_assigned }}
+        effect: NoExecute
+        value: "reserved"
+{% endif %}
+      providerSpec:
+        value:
+          apiVersion: vsphereprovider.openshift.io/v1beta1
+          credentialsSecret:
+            name: vsphere-cloud-credentials
+          diskGiB: 120
+          kind: VSphereMachineProviderSpec
+          memoryMiB: 8192
+          metadata:
+            creationTimestamp: null
+          network:
+            devices:
+            - networkName: {{ vcenter.network }}
+          numCPUs: 4
+          numCoresPerSocket: 1
+          snapshot: ""
+          template: {{ vcenter_cluster.template_name }}
+          userDataSecret:
+            name: worker-user-data
+          workspace:
+            datacenter: {{ vcenter.datacenter }}
+            datastore: {{ vcenter.datastore }}
+            folder: /{{ vcenter.datacenter }}/vm/{{ vcenter_cluster.folder_name }}
+            server: {{ vcenter.ip }}
+            resourcePool: /{{ vcenter.datacenter }}/host/{{ vcenter.cluster_name }}/Resources

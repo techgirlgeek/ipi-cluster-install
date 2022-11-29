@@ -1,0 +1,8 @@
+---
+- name: Install additional python modules for deploying yaml files
+  ansible.builtin.pip:
+    name:
+      - kubernetes
+      - kubernetes-validate
+      - openshift
+  become: true

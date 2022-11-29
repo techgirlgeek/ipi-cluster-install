@@ -1,0 +1,8 @@
+vcenter_cluster:
+  folder_name: folder-name-grepped-after-initial-build
+  template_name: template-name-grepped-after-initial-build
+  api_vip: api_VIP_ip_address
+  ingress_vip: ingress_vip_ip_address
+
+install_config_cluster:
+  cluster_name: cluster-name-dev

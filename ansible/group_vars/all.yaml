@@ -1,0 +1,40 @@
+---
+K8S_AUTH_SSL_CA_CERT: /etc/ssl/certs/ca-bundle.crt
+
+catalog_dir: "{{ playbook_dir }}/kustomize-dir"
+
+vcenter:
+  ip: vcenter-ip-or-hostname
+  datastore: Datastore-name
+  network: network-name
+  cluster_name: cluster-name
+  # following are from vaulted files
+  service_account_username: "{{ vsphereuname }}"
+  service_account_password: "{{ vspherepw }}"
+  datacenter: datacenter-name
+
+install_config:
+  base_domain: base-domain.com
+  network:
+    cluster_network:
+      cidr: 10.0.0.0/16
+    service_network: 124.30.0.0/16
+    machine_network: 10.100.24.0/24
+
+group_sync:
+  namespace: ldap-sync
+  sync_config_url: ldap://ldap.url.com/
+  bindDN: "bindDN"
+  # LDAP Examples, use real values
+  usersQuery:
+    baseDN: "dc=domain,dc=com"
+    filter: "&(objectclass=organizationalPerson)"
+  whitelist: |
+    CN=OCP-Admins-Group-Name,CN=Users,DC=domain,DC=com
+    CN=OCP-Read-Only,CN=Users,DC=lockheedfcu,DC=local
+
+ca_bundle_crt: |
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----

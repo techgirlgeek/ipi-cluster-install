@@ -1,0 +1,20 @@
+---
+- name: Get Cluster infraID
+  ansible.builtin.command: oc get  infrastructure cluster -o jsonpath='{.status.infrastructureName}'
+  register: infraID
+
+- name: Set the InfraID fact
+  ansible.builtin.set_fact:
+    infraID: "{{ infraID.stdout }}"
+
+- name: Check InfraID is set before moving on
+  ansible.builtin.assert:
+    that:
+      - "infraID != ''"
+    fail_msg: "InfraID did not get set. Fix it!"
+
+- name: Deploy machinesets template
+  kubernetes.core.k8s:
+    kubeconfig: "{{ KUBECONFIG }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/machinesets/templates/machinesets.yaml.j2') }}"

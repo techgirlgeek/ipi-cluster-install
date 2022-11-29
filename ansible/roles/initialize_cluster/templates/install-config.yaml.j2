@@ -1,0 +1,41 @@
+apiVersion: v1
+baseDomain: {{ install_config.base_domain }}
+compute:
+- architecture: amd64
+  hyperthreading: Enabled
+  name: worker
+  platform: {}
+  replicas: 3
+controlPlane:
+  architecture: amd64
+  hyperthreading: Enabled
+  name: master
+  platform: {}
+  replicas: 3
+metadata:
+  creationTimestamp: null
+  name: {{ install_config_cluster.cluster_name }}
+networking:
+  clusterNetwork:
+  - cidr: {{ install_config.network.cluster_network.cidr }}
+    hostPrefix: 23
+  machineNetwork:
+  - cidr: {{ install_config.network.machine_network }}
+  networkType: OpenShiftSDN
+  serviceNetwork:
+  - {{ install_config.network.service_network }}
+platform:
+  vsphere:
+    apiVIP: {{ vcenter_cluster.api_vip }}
+    cluster: {{ vcenter.cluster_name }}
+    datacenter: {{ vcenter.datacenter }}
+    defaultDatastore: {{ vcenter.datastore }}
+    ingressVIP: {{ vcenter_cluster.ingress_vip }}
+    network: {{ vcenter.network }}
+    password: {{ vspherepw }}
+    username: {{ vsphereuname }}
+    vCenter: {{ vcenter.ip }}
+publish: External
+pullSecret: {{ pull_secret }}
+sshKey: |
+  REPLACE_WITH_CONTENTS_OF_SSHKey_PUB_FILE

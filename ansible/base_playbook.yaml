@@ -1,0 +1,29 @@
+---
+- name: Get hosts for base plays
+  hosts: localhost
+  gather_facts: true
+
+  vars_prompt:
+
+    - name: username
+      prompt: What is your username?
+      private: false
+
+    - name: password
+      prompt: What is your password?
+
+    - name: cluster
+      prompt: What cluster are you working on?
+      default: dev
+      private: false
+
+  tasks:
+
+    - name: Ensure prereqs are installed
+      ansible.builtin.import_role:
+        name: common
+      become: true
+
+    - name: Setup environment
+      ansible.builtin.import_role:
+        name: base
