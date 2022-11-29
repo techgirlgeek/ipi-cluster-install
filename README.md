@@ -122,7 +122,7 @@ You will need to replace the [cluster] defined in each with the cluster you are 
 
 ### Setting up Infra Taints and Tolerations
 
-**Note**: Make sure all three infra nodes are up and provisioned before running this step.
+**Note**: Make sure all infra nodes are up and provisioned before running this step.
 
   ```sh
   ansible-playbook -i staging \
