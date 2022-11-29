@@ -22,13 +22,16 @@ These instructions are based on the Installer-provisioned Infrastructure install
 2. Copy the contents of your ssh-key pub file to the last line, under `sshKey: |` in the following file:
   ansible/roles/initialize_cluster/templates/install-config.yaml.j2
 
-3. Before installing the cluster, and finalizing steps, ensure the community.okd collection is installed:
+3. Update group_vars/pull-secret.yaml with customer pull-secret
+`ansible-vault edit group_vars/pull-secret.yaml --vault-passwrod-file=../resources/vault-password.txt`
+
+4. Before installing the cluster, and finalizing steps, ensure the community.okd collection is installed:
 `ansible-galaxy collection install community.okd`
 
-4. Make sure there is a cluster specific variables folder and all.yaml under ansible/group_vars/cluster.
+5. Make sure there is a cluster specific variables folder and all.yaml under ansible/group_vars/cluster.
 Use `ansible/group_vars/cluster/dev/all.yaml` as an example, changing variables to match new cluster.
 
-5. New certificates will need to be saved in vaulted files using `ansible-vault` command: <https://docs.ansible.com/ansible/latest/user_guide/vault.html>
+6. New certificates will need to be saved in vaulted files using `ansible-vault` command: <https://docs.ansible.com/ansible/latest/user_guide/vault.html>
    1. Each cluster has a certs file. You can view the format of the file with `ansible-vault edit filename`
    2. Be sure to view the format of the existing certs files before adding a new one. If the format doesn't match the playbooks will fail. The certs info is indented four (4) spaces.
    3. Currently the vault password is being stored in plain text in resources/vault-password.txt. Suggest saving this file to an encrypted password application.
