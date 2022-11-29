@@ -1,5 +1,18 @@
 # Cluster Installation Instructions
 
+- [Cluster Installation Instructions](#cluster-installation-instructions)
+  - [Prerequisites for Cluster Installation](#prerequisites-for-cluster-installation)
+  - [Initialize the Cluster](#initialize-the-cluster)
+  - [Before Moving to Next Steps](#before-moving-to-next-steps)
+  - [General instructions](#general-instructions)
+    - [All Plays in One](#all-plays-in-one)
+    - [Installing api and wildcard certs](#installing-api-and-wildcard-certs)
+    - [Create MachineConfigPool for Infra Nodes](#create-machineconfigpool-for-infra-nodes)
+    - [Installing machinesets](#installing-machinesets)
+    - [Enable LDAP](#enable-ldap)
+    - [Enable LDAP Group Sync and role bindings](#enable-ldap-group-sync-and-role-bindings)
+    - [Setting up Infra Taints and Tolerations](#setting-up-infra-taints-and-tolerations)
+
 ## Prerequisites for Cluster Installation
 
 These instructions are based on the Installer-provisioned Infrastructure installation procedure.(<https://docs.openshift.com/container-platform/4.10/installing/installing_vsphere/installing-vsphere-installer-provisioned-customizations.html>)
