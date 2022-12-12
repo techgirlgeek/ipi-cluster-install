@@ -2,7 +2,7 @@
 - name: Create Infra MachineConfigPools
   kubernetes.core.k8s:
     state: present
-    kubeconfig: "{{ KUBECONFIG }}"
+    kubeconfig: "{{ kubeconfig }}"
     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/machineconfigpool/templates/mcp.yaml.j2') }}"
   loop:
     - infra
@@ -10,7 +10,7 @@
 - name: Create Infra MachineConfigs
   kubernetes.core.k8s:
     state: present
-    kubeconfig: "{{ KUBECONFIG }}"
+    kubeconfig: "{{ kubeconfig }}"
     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/machineconfigpool/templates/mc.yaml.j2') }}"
   loop:
     - infra

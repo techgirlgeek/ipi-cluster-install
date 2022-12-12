@@ -15,6 +15,6 @@
 
 - name: Deploy machinesets template
   kubernetes.core.k8s:
-    kubeconfig: "{{ KUBECONFIG }}"
+    kubeconfig: "{{ kubeconfig }}"
     state: present
     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/machinesets/templates/machinesets.yaml.j2') }}"

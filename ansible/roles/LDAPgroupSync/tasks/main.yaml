@@ -61,19 +61,19 @@
 
 - name: Create ldap-group-syncer ConfigMap
   kubernetes.core.k8s:
-    kubeconfig: "{{ KUBECONFIG }}"
+    kubeconfig: "{{ kubeconfig }}"
     state: present
     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-group-syncer-cm.yaml.j2') }}"
 
 - name: Create ldap-group-whitelist
   kubernetes.core.k8s:
-    kubeconfig: "{{ KUBECONFIG }}"
+    kubeconfig: "{{ kubeconfig }}"
     state: present
     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-group-syncer-whitelist.yaml.j2') }}"
 
 - name: Create ldap-sync-secret
   kubernetes.core.k8s:
-    kubeconfig: "{{ KUBECONFIG }}"
+    kubeconfig: "{{ kubeconfig }}"
     state: present
     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-sync-secret.yaml.j2') }}"
 
