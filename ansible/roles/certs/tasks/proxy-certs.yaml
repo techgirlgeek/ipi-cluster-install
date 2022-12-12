@@ -2,13 +2,13 @@
 
 - name: Create user-ca-bundle ConfigMap
   kubernetes.core.k8s:
-    kubeconfig: "{{ KUBECONFIG }}"
+    kubeconfig: "{{ kubeconfig }}"
     state: present
-    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/proxy/templates/proxy-cert.yaml.j2') }}"
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/certs/templates/proxy-cert.yaml.j2') }}"
 
 - name: Ensure proxy has correct bundle applied
-  cubernetes.core.k8s:
-    kubeconfig: "{{ KUBECONFIG }}"
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
     state: present
     definition:
       apiVersion: config.openshift.io/v1
