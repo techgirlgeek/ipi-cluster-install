@@ -1,40 +1,49 @@
 ---
 K8S_AUTH_SSL_CA_CERT: /etc/ssl/certs/ca-bundle.crt
 
+# Used for ldap and API cert configs
 catalog_dir: "{{ playbook_dir }}/kustomize-dir"
 
-vcenter:
-  ip: vcenter-ip-or-hostname
-  datastore: Datastore-name
-  network: network-name
-  cluster_name: cluster-name
-  # following are from vaulted files
-  service_account_username: "{{ vsphereuname }}"
-  service_account_password: "{{ vspherepw }}"
-  datacenter: datacenter-name
+chrony_server_list:
+  - 10.1.7.125
 
 install_config:
-  base_domain: base-domain.com
+  ocp_install_ver: 4.12.3
+  base_domain: base_domain.org
+  # Change IP's per customer
   network:
     cluster_network:
-      cidr: 10.0.0.0/16
-    service_network: 124.30.0.0/16
-    machine_network: 10.100.24.0/24
+      cidr: 10.128.0.0/14
+    service_network: 172.30.0.0/16
+    machine_network: 10.7.0.0/16
 
+# Update with customer info
 group_sync:
-  namespace: ldap-sync
-  sync_config_url: ldap://ldap.url.com/
-  bindDN: "bindDN"
-  # LDAP Examples, use real values
+  ns: ldap-sync
+  sync_config_url: ldaps://ldap.url.domain.org:636
   usersQuery:
-    baseDN: "dc=domain,dc=com"
-    filter: "&(objectclass=organizationalPerson)"
-  whitelist: |
-    CN=OCP-Admins-Group-Name,CN=Users,DC=domain,DC=com
-    CN=OCP-Read-Only,CN=Users,DC=lockheedfcu,DC=local
+    baseDN: "DC=domain,DC=org"
+  groupsQuery:
+    baseDN: "OU=DomainOU,DC=domain,DC=org"
+
+operatorhub:
+  operator_source: redhat-operators
+  ocp_main_ver: 4.12
+
+# Quay configs if using internal Quay
+quay_registry_name: quay-registry-name
+quay_app_name: quay-app
+quay_registry_url: "{{ quay_registry_name }}.{{ install_config.base_domain }}"
+
+storage:
+  storageclass: vmwarelvs
 
 ca_bundle_crt: |
     -----BEGIN CERTIFICATE-----
+    CA_BUNDLE_CRT_STUFF
     -----END CERTIFICATE-----
+
+quay_crt: |
     -----BEGIN CERTIFICATE-----
+    QUAY_CERT
     -----END CERTIFICATE-----

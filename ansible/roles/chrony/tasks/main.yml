@@ -1,0 +1,40 @@
+- name: Clean chrony-manifests if requested
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/chrony-manifests"
+    state: absent
+  when: clean is defined
+
+- name: Create chrony-manifests folder
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/chrony-manifests"
+    state: directory
+    mode: '0755'
+
+- name: Create the chrony.conf file
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /tmp/chrony.conf
+    mode: '0664'
+
+- name: Save base64 of config file
+  ansible.builtin.set_fact:
+    chrony_base64: "{{ (lookup('file', '/tmp/chrony.conf') + '\n') | b64encode }}"
+
+- name: Generate the machineconfigs for chrony
+  ansible.builtin.template:
+    src: mc-chrony-configuration.yaml.j2
+    dest: "{{ playbook_dir }}/chrony-manifests/99-{{ item }}-chrony-configuration.yaml"
+    mode: '0664'
+  loop:
+    - master
+    - worker
+
+- name: Deploy chrony MachineConfig
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/chrony-manifests/99-{{ item }}-chrony-configuration.yaml"
+    validate:
+      fail_on_error: yes
+  loop:
+    - master
+    - worker

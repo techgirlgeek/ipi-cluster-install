@@ -6,56 +6,157 @@
 - name: Perform base config
   import_playbook:
     base_playbook.yaml
+  tags: always
 
 - name: Get hosts for playbook
   hosts: localhost
   gather_facts: true
 
-  vars_prompt:
-
-    - name: role_assigned
-      prompt: "What role should be assigned to machinesets?"
-      default: "infra"
-      private: false
-
-  vars:
-
-    api_cert_dir: "{{ catalog_dir }}/cert-patches/openshift-api-certificate/overlays/{{ cluster }}"
-    ldap_dir: "{{ catalog_dir }}/oauth/overlays/ldap"
-    groupsync_dir: "{{ catalog_dir }}/ldapcron/overlays"
-    role_binding_dir: "{{ catalog_dir }}/groups-role-bindings/base"
-
   tasks:
 
     - name: Cluster being built
       ansible.builtin.debug:
-        msg: "Finalizing the {{ cluster }} cluster."
+        msg:
+          - "Finalizing the {{ cluster }} cluster.\n"
+          - "Cluster is in {{ env }} environment"
+      tags: always
 
-    - name: Results of Machineset Prompt
-      ansible.builtin.debug:
-        msg: "You are creating {{ role_assigned }} machinesets"
+- name: Add chrony machineconfigs
+  ansible.builtin.import_playbook: chrony_playbook.yaml
+  tags: always
 
-    # Apply Certs
-    - name: Apply Certs
-      ansible.builtin.import_role:
-        name: certs
+- name: Create Machine Config Pools
+  ansible.builtin.import_playbook: mcp_playbook.yaml
+  tags: always
 
-    - name: Create Machine Config Pools
-      ansible.builtin.import_role:
-        name: machineconfigpool
+- name: Create Infra Machinesets
+  ansible.builtin.import_playbook: machinesets_playbook.yaml
+  vars:
+    role_assigned: infra
+  tags: always
 
-    - name: Create Machinesets
-      ansible.builtin.import_role:
-        name: machinesets
+- name: Create Storage Machinesets
+  ansible.builtin.import_playbook: machinesets_playbook.yaml
+  vars:
+    role_assigned: storage
+  tags: always
 
-    - name: Apply LDAP Oauth to Cluster
-      ansible.builtin.import_role:
-        name: ldap
+- name: Apply LDAP Oauth to Cluster
+  ansible.builtin.import_playbook: ldap_playbook.yaml
+  tags: always
 
-    - name: Create LDAP Sync Jobs
-      ansible.builtin.import_role:
-        name: LDAPgroupSync
+- name: Create LDAP Sync Jobs
+  ansible.builtin.import_playbook: ldap_groupsync_playbook.yaml
+  tags: always
 
-    - name: Apply Taints and Tolerations to infra Nodes
-      ansible.builtin.import_role:
-        name: node_config
+- name: Apply Taints and Tolerations to infra Nodes
+  ansible.builtin.import_playbook: nodeconfig_playbook.yaml
+  tags: always
+
+# Start Operator Functions
+- name: Create links to disconnected Quay
+  ansible.builtin.import_playbook: operators_config_playbook.yaml
+  tags: ocp
+
+- name: Update Operator Service Patch to use disconnected Repo
+  ansible.builtin.import_playbook: update_svs_playbook.yaml
+  tags: ocp
+
+- name: Install Local Storage Operator
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: local-storage-operator
+    install_mode: OwnNamespaces
+    ns: openshift-local-storage
+    channel: stable
+  tags: always
+
+- name: Install ODF Operators
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: odf-operator
+    install_mode: OwnNamespace
+    ns: openshift-storage
+    channel: "stable-{{ operatorhub.ocp_main_ver }}"
+  tags: always
+
+- name: Install GitOps Operator
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: openshift-gitops-operator
+    install_mode: AllNamespaces
+    ns: openshift-operators
+    channel: latest
+  tags: ocp
+
+- name: Install Cluster Logging Operator
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: cluster-logging
+    install_mode: OwnNamespace
+    ns: openshift-logging
+    channel: stable
+  tags: always
+
+- name: Install Pipelines Operator
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: openshift-pipelines-operator-rh
+    install_mode: AllNamespaces
+    ns: openshift-operators
+    channel: latest
+  tags: ocp
+
+- name: Install ElasticSearch Operator
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: elasticsearch-operator
+    install_mode: OwnNamespace
+    ns: openshift-operators-redhat
+    channel: stable
+  tags: always
+
+- name: Install Cert-manager-operator
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: openshift-cert-manager-operator
+    install_mode: OwnNamespace
+    ns: openshift-cert-manager-operator
+    channel: stable-v1
+  tags: always
+
+- name: Install Quay Operator
+  ansible.builtin.import_playbook: operators_install_playbook.yaml
+  vars:
+    operator: quay-operator
+    install_mode: AllNamespaces
+    ns: openshift-operators
+    channel: stable-3.8
+  tags: quay
+
+- name: Install Bitnami
+  ansible.builtin.import_playbook: bitnami_playbook.yaml
+  tags: ocp
+
+- name: Install ArgoCD
+  ansible.builtin.import_playbook: install_argocd_playbook.yaml
+  tags: ocp
+
+- name: Toggle Update mode for all Operators
+  ansible.builtin.import_playbook: operator_toggle_playbook.yaml
+  tags: always
+
+- name: Configure Network Policies
+  ansible.builtin.import_playbook: network_policy_playbook.yaml
+  tags: ocp
+
+- name: Configure Image Registry Storage
+  ansible.builtin.import_playbook: image_registry_playbook.yaml
+  tags: always
+
+# - name: Apply Network Policies to ArgoCD Projects
+#   ansible.builtin.import_playbook: net_policy_argo_playbook.yaml
+
+- name: Move monitoring pods to Infra Nodes
+  ansible.builtin.import_playbook: monitoring_config_playbook.yaml
+  tags: always

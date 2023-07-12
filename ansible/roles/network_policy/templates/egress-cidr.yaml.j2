@@ -1,0 +1,7 @@
+apiVersion: network.openshift.io/v1
+egressCIDRs:
+  - {{ network_policy.egress_cidr }}
+host: {{ item }}
+kind: HostSubnet
+metadata:
+  name: {{ item }}

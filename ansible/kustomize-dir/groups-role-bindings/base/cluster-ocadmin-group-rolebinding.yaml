@@ -9,7 +9,10 @@ metadata:
 subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
-    name: OCP-Admins
+    name: IT-Compute-RHO-Super-Admins
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: EAS-RHO-Basic-Admins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

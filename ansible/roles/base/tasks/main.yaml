@@ -13,6 +13,7 @@
 
 - name: Ensure user is logged into cluster
   block:
+
     # Set facts
     - name: Get the user running the playbook
       ansible.builtin.command: oc whoami
@@ -33,16 +34,3 @@
     - name: Working on which cluster?
       ansible.builtin.debug:
         var: cluster
-
-  rescue:
-    - name: Authenticate with OCP
-      community.okd.openshift_auth:
-        host: "https://api.{{ install_config_cluster.cluster_name }}.{{ install_config.base_domain }}:6443"
-        username: "{{ username }}"
-        password: "{{ password }}"
-        validate_certs: false
-      register: ocp_login
-
-    - name: Username is set to
-      ansible.builtin.debug:
-        var: ocp_login.openshift_auth.username

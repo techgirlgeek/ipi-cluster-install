@@ -1,0 +1,22 @@
+- name: Run command locally
+  delegate_to: localhost
+  when: operator == 'local-storage-operator'
+  block:
+
+  - name: Wait for Local Storage Operator to complete
+    ansible.builtin.pause:
+
+  - name: Create Auto Discover Devices
+    kubernetes.core.k8s:
+      state: present
+      definition: |
+        {{ lookup('template',
+        '{{ playbook_dir }}/roles/operators_install/files/LS/localvolumediscover.yaml')
+        }}
+
+  - name: Create Local Volume Set
+    kubernetes.core.k8s:
+      state: present
+      definition: |
+        {{ lookup('template',
+        '{{ playbook_dir }}/roles/operators_install/templates/LS/localvolumeset.yaml.j2') }}

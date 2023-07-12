@@ -1,0 +1,7 @@
+apiVersion: network.openshift.io/v1
+egressIPs:
+  - {{ ip }}
+kind: NetNamespace
+netname: {{ name }}
+metadata:
+  name: {{ name }}

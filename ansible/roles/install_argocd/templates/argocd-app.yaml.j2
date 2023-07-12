@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: olb
+  namespace: {{ ns }}
+spec:
+  description: Online Banking
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - name: in-cluster
+    namespace: foundation
+    server: https://kubernetes.default.svc
+  - name: in-cluster
+    namespace: value-add
+    server: https://kubernetes.default.svc
+  - name: in-cluster
+    namespace: backbase
+    server: https://kubernetes.default.svc
+  - name: in-cluster
+    namespace: {{ ns }}
+    server: https://kubernetes.default.svc
+  roles:
+  - description: Online Banking Developer
+    name: developer
+    policies:
+    - g, RHO-PRJ-{{ cluster_abr }}-DXT-READ, proj:role:developer-read-only
+    - g, RHO-PRJ-{{ cluster_abr }}-DXT-ADMIN, proj:role:developer-editor
+    - p, proj:role:developer-read-only, applications, get, olb/*, allow
+    - p, proj:role:developer-read-only, applicationsets, get, olb/*, allow
+    - p, proj:role:developer-editor, applications, sync, olb/*, allow
+    - p, proj:role:developer-editor, applicationsets, sync, olb/*, allow
+  sourceRepos:
+  - {{ argocd.dev_repo_url }}

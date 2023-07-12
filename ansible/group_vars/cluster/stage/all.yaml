@@ -1,0 +1,47 @@
+cluster: "stage"
+cluster_abr: "STG"
+
+vcenter_cluster:
+  # vm is a hidden element in the below path and is required to work
+  folder_path: "/VCenter/Folder/vm/Path/"
+  folder_name: "VCenterFolder_Name"
+  template_name: this-needs-to-be-updated-after-IPI-build-starts
+  api_vip: 10.7.22.24
+  ingress_vip: 10.7.22.25
+  network: VCenter-network
+  cluster_name: VCenter-cluster-name
+
+install_config_cluster:
+  cluster_name: OCP-cluster-name-here
+
+vmconfig:
+  master:
+    cpu: 8
+    ram: 24576
+    disk: 120
+    core: 4
+  worker:
+    cpu: 24
+    ram: 122880
+    disk: 120
+    core: 12
+  infra:
+    cpu: 12
+    ram: 24576
+    disk: 120
+    core: 6
+  storage:
+    cpu: 10
+    ram: 32768
+    disk: 120
+    core: 5
+
+group_sync_cluster:
+  usersQuery:
+    filter: "&(|(Customer-Provided-Filter,DC=org))"
+  whitelist: |
+    Customer-Provided-whitelist
+
+# Optional network policies
+network_policy:
+  egress_cidr: "10.#.#.0/24"

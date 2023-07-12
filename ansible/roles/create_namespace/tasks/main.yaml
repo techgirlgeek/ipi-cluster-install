@@ -1,0 +1,19 @@
+---
+- name: Create new namespace
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/create_namespace/templates/namespace.yaml.j2')
+      }}
+
+## Uncomment below: to remove default egress policy
+# - name: Remove deny-external-egress Net Policy
+#   kubernetes.core.k8s:
+#     state: absent
+#     definition:
+#       apiVersion: network.openshift.io/v1
+#       kind: EgressNetworkPolicy
+#       metadata:
+#         name: deny-external-egress
+#         namespace: "{{ namespace }}"

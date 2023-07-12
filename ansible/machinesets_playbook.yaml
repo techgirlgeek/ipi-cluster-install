@@ -12,15 +12,16 @@
   gather_facts: false
   become: false
 
-  vars_prompt:
-
-    - name: role_assigned
-      prompt: "What role should be assigned to machinesets?"
-      default: "worker"
-      private: false
+  # Left GOVC Code for reference; although currently unused
+  environment:
+    K8S_AUTH_SSL_CA_CERT: "{{ K8S_AUTH_SSL_CA_CERT }}"
+    # GOVC_USERNAME: "{{ vcenter.service_account_username }}"
+    # GOVC_PASSWORD: "{{ vcenter.service_account_password }}"
+    # GOVC_URL: "https://{{ vcenter.ip }}"
+    # GOVC_DATACENTER: "{{ vcenter.datacenter }}"
+    # GOVC_INSECURE: 1
 
   tasks:
-
     - name: Results of Prompt
       ansible.builtin.debug:
         msg: "You are creating {{ role_assigned }} machinesets"

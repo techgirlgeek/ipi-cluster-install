@@ -36,15 +36,15 @@ spec:
                   name: "ldap-sync-volume-whitelist"
                 - mountPath: "/etc/secrets"
                   name: "ldap-bind-password"
-                # - mountPath: "/etc/ldapconfig"
-                #   name: "ldap-ca"
+                - mountPath: "/etc/ldapconfig"
+                  name: "ldap-ca"
           volumes:
             - name: "ldap-sync-volume"
               configMap:
                 name: "ldap-group-syncer"
-            # - name: "ldap-ca"
-            #   configMap:
-            #     name: "ldap-ca-config-map"
+            - name: "ldap-ca"
+              configMap:
+                name: "ldap-ca-config-map"
             - name: "ldap-sync-volume-whitelist"
               configMap:
                 name: "ldap-group-syncer-whitelist"

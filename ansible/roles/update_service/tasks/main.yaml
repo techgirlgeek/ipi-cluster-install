@@ -1,0 +1,78 @@
+---
+- name: Create Operator namespace
+  ansible.builtin.include_role:
+    name: create_namespace
+
+- name: Create update service configMaps
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup("template",
+      "{{ playbook_dir }}/roles/update_service/templates/updsvscm.yaml.j2",
+      template_vars=dict(
+      ns="{{ item.ns }}",
+      name="{{ item.name }}"
+      )) }}
+  loop:
+    - name: updateservicecert
+      ns: openshift-config
+    - name: updateservice-trusted-ca
+      ns: "{{ ns }}"
+    - name: image-registry-certificates
+      ns: openshift-image-registry
+  loop_control:
+    pause: 5
+
+- name: Ensure image has correct cert applied
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: config.openshift.io/v1
+      kind: Image
+      metadata:
+        name: cluster
+      spec:
+        additionalTrustedCA:
+          name: updateservicecert
+
+- name: Create update service operator
+  ansible.builtin.include_role:
+    name: operators_install
+
+- name: Wait for Update Service Operator to be ready
+  ansible.builtin.pause:
+
+- name: Create Update Service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: updateservice.operator.openshift.io/v1
+      kind: UpdateService
+      metadata:
+        name: updateservice
+        namespace: "{{ ns }}"
+      spec:
+        replicas: 1
+        graphDataImage: "{{ quay_registry_url }}:443/openshift/graph-image:latest"
+        releases: "{{ quay_registry_url }}:443/openshift/release-images"
+
+- name: Get Update Service URI
+  kubernetes.core.k8s_info:
+    kind: UpdateService
+    validate_certs: false
+  register: updateservice_info
+
+- name: Get UpdateService URI
+  ansible.builtin.set_fact:
+    updateservice_uri: "{{ updateservice_info.resources | map(attribute='status.policyEngineURI') | list }}"
+
+- name: Patch ClusterVersion
+  kubernetes.core.k8s_json_patch:
+    kind: ClusterVersion
+    name: version
+    patch:
+      - op: add
+        path: /spec/upstream
+        value: "{{ item }}/api/upgrades_info/v1/graph"
+  loop:
+    "{{ updateservice_uri }}"

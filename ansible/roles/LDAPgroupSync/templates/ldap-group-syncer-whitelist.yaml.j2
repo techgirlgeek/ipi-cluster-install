@@ -2,9 +2,9 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: ldap-group-syncer-whitelist
-  namespace: {{ group_sync.namespace }}
+  namespace: {{ group_sync.ns }}
   labels:
     app: cronjob-ldap-group-sync
 data:
   whitelist.txt: |
-    {{ group_sync.whitelist | indent(width=4) }}
+    {{ group_sync_cluster.whitelist | indent(width=4) }}

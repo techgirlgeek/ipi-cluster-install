@@ -1,0 +1,75 @@
+---
+- name: Bitnami Service Account
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_serviceaccount.yaml.j2') }}
+
+- name: Add Bitnami RBAC Info
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_role.yaml.j2'
+      ) }}
+  loop:
+    - name: sealed-secrets-service-proxier
+      resourceNames: ['http:sealed-secrets-controller:', sealed-secrets-controller]
+      resources: services/proxy
+      verbs: [create,get]
+    - name: sealed-secrets-key-admin
+      resourceNames: []
+      resources: secrets
+      verbs: [create, list]
+
+- name: Add Sealed Secrets Service
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_service.yaml.j2') }}
+
+- name: Add RoleBindings
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_rolebinding.yaml.j2') }}
+  loop:
+    - name: sealed-secrets-service-proxier
+      roleRefName: sealed-secrets-service-proxier
+      subjectsKind: Group
+      subjectsName: system:authenticated
+    - name: sealed-secrets-controller
+      roleRefName: sealed-secrets-key-admin
+      subjectsKind: ServiceAccount
+      subjectsName: sealed-secrets-controller
+
+- name: Add Custom Resource definition
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_customresource.yaml.j2') }}
+
+- name: Add Custom Cluster Role Binding definition
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_clusterrolebinding.yaml.j2') }}
+
+- name: Add Custom Cluster Role definition
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_clusterrole.yaml.j2') }}
+
+- name: Bitnami Deployment
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/bitnami/templates/bitnami_deployment.yaml.j2') }}

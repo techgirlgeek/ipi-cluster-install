@@ -1,0 +1,15 @@
+- name: Run command locally
+  delegate_to: localhost
+  when: cluster == 'quay'
+  block:
+
+  # - name: Pause while ES Operator updates / installs
+  #   ansible.builtin.pause:
+
+  - name: Install Quay Operator
+    kubernetes.core.k8s:
+      state: present
+      definition: |
+        {{ lookup('template',
+        '{{ playbook_dir }}/roles/operators_install/files/ES/es-instance.yaml')
+        }}

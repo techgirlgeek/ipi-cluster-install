@@ -1,0 +1,37 @@
+---
+- name: Create Quay Registry Namespace
+  ansible.builtin.import_role:
+    name: namespace
+
+# - name: Deploy Quay Registry Config Bundle
+#   kubernetes.core.k8s:
+#   state: present
+#   definition: |
+#     {{ lookup('template',
+#     '{{ playbook_dir }}/roles/quay_config/templates/config_bundle.yaml.j2')
+#     }}
+
+- name: Create Quay Registry Secret
+  kubernetes.core.k8s:
+  state: present
+  definition:
+    apiVersion: v1
+    kind: Secret
+    type: Opaque
+    metadata:
+      name: "{{ quay_registry_name }}-quay-config-bundle"
+      namespace: '{{ ns }}'
+    data:
+      config.yaml: |
+        {{ lookup('template',
+        '{{ playbook_dir }}/roles/quay_config/templates/config_bundle.yaml.j2') | b64encode }}
+
+- name: Create Quay Registry
+  kubernetes.core.k8s:
+  state: present
+  definition: |
+    {{ lookup('template',
+    '{{ playbook_dir }}/roles/quay_config/templates/quay_registry_create.yaml.j2')
+    }}
+
+

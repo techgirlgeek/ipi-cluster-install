@@ -11,10 +11,44 @@
   ansible.builtin.assert:
     that:
       - "infraID != ''"
-    fail_msg: "InfraID did not get set. Fix it!"
+    fail_msg: "InfraID did not get set. Please log into the cluster!"
 
 - name: Deploy machinesets template
   kubernetes.core.k8s:
-    kubeconfig: "{{ kubeconfig }}"
     state: present
-    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/machinesets/templates/machinesets.yaml.j2') }}"
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/machinesets/templates/machinesets.yaml.j2') }}
+
+- name: Pause after storage nodes for finalization scripts
+  ansible.builtin.pause:
+    prompt: "Create local disks and VMotion Storage Nodes."
+  when: role_assigned == 'storage'
+
+# - name: Check GOVC
+#   ansible.builtin.command: "govc about"
+#   register: govc_about
+
+# - name: Show me the stuff
+#   ansible.builtin.debug:
+#     var: govc_about
+
+# - name: Get Datastore Names for Storage using GOVC
+#   ansible.builtin.shell: "govc find / | grep RHOFS | grep {{ vcenter_cluster.datastore_cluster }} | sort | head -3 | awk -F\/ '{print $NF}'"
+#   register: datastore_cluster
+#   when: role_assigned == 'storage'
+
+# - name: Get Datastore Names for Infra using GOVC
+#   ansible.builtin.shell: "govc find / | grep RHO | grep -v RHOFS | grep {{ vcenter_cluster.datastore_cluster }} | sort | head -3 | awk -F\/ '{print $NF}'"
+#   register: datastore_cluster
+#   when: role_assigned == 'infra'
+
+# - name: Show us datastore_cluster
+#   ansible.builtin.debug:
+#     var: item
+#   loop: "{{ datastore_cluster.stdout_lines }}"
+
+# - name: Show us our template
+#   ansible.builtin.debug:
+#     msg: "{{ lookup('template', '{{ playbook_dir }}/roles/machinesets/templates/machinesets.yaml.j2', template_vars=dict(machineset_loop='{{ item }}')) }}"
+#   loop: "{{ datastore_cluster.stdout_lines }}"
