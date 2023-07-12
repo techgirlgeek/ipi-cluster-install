@@ -1,0 +1,10 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: "{{ ns }}"
+  namespace: "{{ ns }}"
+{% if operator != 'elasticsearch-operator' %}
+spec:
+  targetNamespaces:
+    - "{{ ns }}"
+{% endif %}

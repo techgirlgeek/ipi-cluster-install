@@ -1,0 +1,14 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ocs-deviceset-{{ storage.storageclass }}-0-data-{{ item.iteration }}
+  namespace: openshift-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Ti
+  storageClassName: {{ storage.storageclass }}
+  volumeMode: Block
+  volumeName: {{ item.pvname }}

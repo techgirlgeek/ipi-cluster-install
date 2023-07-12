@@ -16,10 +16,10 @@
               node-role.kubernetes.io/infra: ""
           tolerations:
             - effect: NoSchedule
-              key: infra
+              key: node-role.kubernetes.io/infra
               operator: Equal
               value: reserved
             - effect: NoExecute
-              key: infra
+              key: node-role.kubernetes.io/infra
               operator: Equal
               value: reserved

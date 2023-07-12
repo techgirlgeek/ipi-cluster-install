@@ -1,0 +1,23 @@
+---
+- name: Get Sealed Secret
+  kubernetes.core.k8s_info:
+    kind: Secret
+    namespace: kube-system
+    label_selectors:
+      - sealedsecrets.bitnami.com/sealed-secrets-key = active
+  register: bitnami_sealed_secret
+
+- name: Show the results
+  ansible.builtin.debug:
+    var: bitnami_sealed_secret
+
+- name: Push Sealed Secret to file
+  ansible.builtin.copy:
+    content: "{{ bitnami_sealed_secret | to_nice_yaml }}"
+    dest: "{{ playbook_dir }}/group_vars/cluster/{{ cluster }}/{{ cluster }}-encryption_key_sealed_secrets_controller.yaml"
+    backup: true
+
+- name: Encrypt Sealed Secret
+  ansible.builtin.command:
+    chdir: "{{ playbook_dir }}/group_vars/cluster/{{ cluster }}/"
+    cmd: "/usr/bin/ansible-vault encrypt {{ cluster }}-encryption_key_sealed_secrets_controller.yaml --vault-password-file={{ playbook_dir }}/../resources/vault-password.txt"

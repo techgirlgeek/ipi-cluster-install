@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: {}
+  labels:
+    name: {{ item.name }}
+  name: {{ item.name }}
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ item.roleRefName }}
+subjects:
+- kind: {{ item.subjectsKind }}
+  name: {{ item.subjectsName }}
+{% if item.subjectsKind == 'ServiceAccount' %}
+  namespace: kube-system
+{% elif item.subjectsKind == 'Group' %}
+  apiGroup: rbac.authorization.k8s.io
+{% endif %}

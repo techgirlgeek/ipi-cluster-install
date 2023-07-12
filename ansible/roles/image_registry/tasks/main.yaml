@@ -1,0 +1,16 @@
+---
+- name: Create Image Registry PVC
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('ansible.builtin.file',
+      '{{ playbook_dir }}/roles/image_registry/files/registry-pvc.yaml')
+      }}
+
+- name: Patch Image Config Cluster
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/image_registry/files/patch-cluster.yaml')
+      }}

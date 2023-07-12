@@ -1,0 +1,152 @@
+- name: Run command locally
+  delegate_to: localhost
+  when: operator == 'odf-operator'
+  block:
+    - name: Enable ODF Console Plugin
+      kubernetes.core.k8s_json_patch:
+        kind: Console
+        api: operator.openshift.io/v1
+        name: cluster
+        namespace: openshift-storage
+        patch:
+          - op: add
+            path: /spec/plugins
+            value: ["odf-console"]
+
+    # - name: Get Storage nodes
+    #   kubernetes.core.k8s_info:
+    #     kind: Node
+    #     validate_certs: false
+    #     label_selectors:
+    #       - "node-role.kubernetes.io/storage"
+    #   register: storage_nodes
+
+    # - name: Set storage node names
+    #   ansible.builtin.set_fact:
+    #     node_names: "{{ storage_nodes.resources | map(attribute='metadata.name') | list }}"
+
+    # - name: Check storage node names
+    #   ansible.builtin.debug:
+    #     var: node_names
+
+    - name: Get LVS Info
+      kubernetes.core.k8s_info:
+        kind: LocalVolumeSet
+        api: local.storage.openshift.io/v1alpha1
+        wait: true
+      register: lvs_exists
+
+    - name: Wait for OCS Storage Cluster to be ready in Data Foundation
+      ansible.builtin.pause:
+
+    - name: Create Storage Cluster
+      kubernetes.core.k8s:
+        state: present
+        definition: |
+          {{ lookup('template',
+          '{{ playbook_dir }}/roles/operators_install/templates/ODF/storagecluster.yaml.j2')
+          }}
+      when: lvs_exists
+
+    - name: Patch Enable Ceph Tools
+      kubernetes.core.k8s_json_patch:
+        kind: OCSInitialization
+        api: ocs.openshift.io/v1
+        name: ocsinit
+        namespace: openshift-storage
+        patch:
+          - op: add
+            path: /spec/enableCephTools
+            value: true
+
+    - name: Patch ODF Operator Sub
+      kubernetes.core.k8s:
+        state: present
+        kind: Subscription
+        api_version: operators.coreos.com/v1alpha1
+        name: "{{ item }}"
+        namespace: openshift-storage
+        definition:
+          spec:
+            config:
+              tolerations:
+                - effect: NoSchedule
+                  key: node-role.kubernetes.io/infra
+                  operator: Equal
+                  value: reserved
+                - effect: NoExecute
+                  key: node-role.kubernetes.io/infra
+                  operator: Equal
+                  value: reserved
+      loop:
+        - odf-operator
+        - "odf-csi-addons-operator-stable-{{ operatorhub.ocp_main_ver }}-{{ operatorhub.operator_source }}-openshift-marketplace"
+
+    - name: Scale ODF Operator Mgr down
+      kubernetes.core.k8s_scale:
+        api_version: apps/v1
+        kind: Deployment
+        name: odf-operator-controller-manager
+        namespace: openshift-storage
+        current_replicas: 1
+        replicas: 0
+
+    - name: Replace Rook Ceph Operator CM
+      kubernetes.core.k8s:
+        state: patched
+        kind: ConfigMap
+        name: rook-ceph-operator-config
+        namespace: openshift-storage
+        definition:
+          data:
+            CSI_ENABLE_CSIADDONS: 'true'
+            CSI_LOG_LEVEL: '5'
+            CSI_PLUGIN_TOLERATIONS: |-
+
+              - key: node.ocs.openshift.io/storage
+                operator: Equal
+                value: "true"
+                effect: NoSchedule
+              - key: node-role.kubernetes.io/infra
+                operator: Equal
+                value: "reserved"
+                effect: NoSchedule
+              - effect: NoExecute
+                key: node-role.kubernetes.io/infra
+                operator: Equal
+                value: reserved
+            CSI_PROVISIONER_TOLERATIONS: |-
+
+              - key: node.ocs.openshift.io/storage
+                operator: Equal
+                value: "true"
+                effect: NoSchedule
+              - key: node-role.kubernetes.io/infra
+                operator: Equal
+                value: "reserved"
+                effect: NoSchedule
+              - effect: NoExecute
+                key: node-role.kubernetes.io/infra
+                operator: Equal
+                value: reserved
+
+    - name: Get Rook Ceph Operator pod Info
+      kubernetes.core.k8s_info:
+        kind: pod
+        label_selectors:
+          - app = rook-ceph-operator
+        namespace: openshift-storage
+      register: rco
+
+    - name: Get Rook Ceph Operator Pod Name
+      ansible.builtin.set_fact:
+        rco_name: "{{ rco.resources | map(attribute='metadata.name') | list }}"
+
+    - name: Delete Rook Ceph Operator pod
+      kubernetes.core.k8s:
+        kind: pod
+        namespace: openshift-storage
+        name: "{{ rco_name | first }}"
+        label_selectors:
+          - app=rook-ceph-operator
+        state: absent

@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: {{ group_sync.namespace }} 
+  namespace: {{ group_sync.ns }} 
   name: ldap-ca-config-map
   labels:
     app: cronjob-ldap-group-sync
 data:
   ca.crt: |
-    {{ ldap_ca_crt | indent(width=4) }}
+    {{ ca_bundle_crt | indent(width=4) }}

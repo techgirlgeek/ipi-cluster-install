@@ -4,13 +4,31 @@ compute:
 - architecture: amd64
   hyperthreading: Enabled
   name: worker
-  platform: {}
+  platform:
+    vsphere:
+      cpus: {{ vmconfig.worker.cpu }}
+      coresPerSocket: {{ vmconfig.worker.core }}
+      memoryMB: {{ vmconfig.worker.ram }}
+      osDisk:
+        diskSizeGB: {{ vmconfig.worker.disk }}
+{% if cluster == 'stage' or cluster == 'prod' or cluster == 'mprod' %}
+  replicas: 6
+{% elif cluster == 'test' %}
+  replicas: 4
+{% else %}
   replicas: 3
+{% endif %}
 controlPlane:
   architecture: amd64
   hyperthreading: Enabled
   name: master
-  platform: {}
+  platform:
+    vsphere:
+      cpus: {{ vmconfig.master.cpu }}
+      coresPerSocket: {{ vmconfig.master.core }}
+      memoryMB: {{ vmconfig.master.ram }}
+      osDisk:
+        diskSizeGB: {{ vmconfig.master.disk }}
   replicas: 3
 metadata:
   creationTimestamp: null
@@ -26,16 +44,143 @@ networking:
   - {{ install_config.network.service_network }}
 platform:
   vsphere:
-    apiVIP: {{ vcenter_cluster.api_vip }}
-    cluster: {{ vcenter.cluster_name }}
+    apiVIPs:
+      - {{ vcenter_cluster.api_vip }}
+    ingressVIPs:
+      - {{ vcenter_cluster.ingress_vip }}
+    cluster: {{ vcenter_cluster.cluster_name }}
+{% if cluster == 'mprod' or cluster == 'mquay' %}
+    datacenter: {{ vcenter.m_datacenter }}
+    defaultDatastore: {{ vcenter.m_datastore }}
+{% else %}
     datacenter: {{ vcenter.datacenter }}
     defaultDatastore: {{ vcenter.datastore }}
-    ingressVIP: {{ vcenter_cluster.ingress_vip }}
-    network: {{ vcenter.network }}
+{% endif %}
+    network: {{ vcenter_cluster.network }}
     password: {{ vspherepw }}
     username: {{ vsphereuname }}
-    vCenter: {{ vcenter.ip }}
+{% if cluster == 'mprod' or cluster == 'mquay' %}
+    vCenter: {{ vcenter.m_host }}
+    folder: "/{{ vcenter.m_datacenter }}/vm{{ vcenter_cluster.folder_path }}{{ vcenter_cluster.folder_name }}"
+{% else %}
+    vCenter: {{ vcenter.host }}
+    #folder: "/{{ vcenter.datacenter }}/vm{{ vcenter_cluster.folder_path }}{{ vcenter_cluster.folder_name }}"
+    folder: "{{ vcenter_cluster.folder_path }}{{ vcenter_cluster.folder_name }}"
+{% endif %}
+    clusterOSImage: http://localhost/rhcos-{{ install_config.ocp_install_ver }}-x86_64-vmware.x86_64.ova
 publish: External
 pullSecret: {{ pull_secret }}
-sshKey: |
-  REPLACE_WITH_CONTENTS_OF_SSHKey_PUB_FILE
+sshKey: {{ ssh_pub_key }}
+additionalTrustBundle: |
+  -----BEGIN CERTIFICATE-----
+  MIIDdDCCAlygAwIBAgIQenRHGraoRZBAchKdlV8s8jANBgkqhkiG9w0BAQsFADBC
+  MRMwEQYKCZImiZPyLGQBGRYDb3JnMRYwFAYKCZImiZPyLGQBGRYGb2N0ZmN1MRMw
+  EQYDVQQDEwpUU1RCUFZDQTAxMB4XDTE2MDYyMTE5NDExMVoXDTI2MDYyMTE5NTEx
+  MVowQjETMBEGCgmSJomT8ixkARkWA29yZzEWMBQGCgmSJomT8ixkARkWBm9jdGZj
+  dTETMBEGA1UEAxMKVFNUQlBWQ0EwMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC
+  AQoCggEBAKn1h/u3EbDMxFj8LbtF9tlqwq5AkIFJx//UJ9/AV9FG2Xf+gm7hiMPU
+  Slmd3hBM71AqI043kLW5lDuSMottLID66U4H3DisYG862NgxRr7UzNfmcDnjANQW
+  O8vpihX/bbg6BH2M87/E6RRnZgRwcA/ZHrBZVsvQJqGIXh7HaWKukdNV4WGmSAOO
+  udd35XwYjARTAX3YEmMCIEdWRdqZlF8+C6BrDr+zDWdFSPPhl39xfC0E9XrwA79u
+  3ilOzCHpY9+ybKqmV+UdsMMlUrt7tgfS4D1PANyU+ErjSqiqRsDSKMc5Rb4ALTT0
+  hrEfyvqNEYiku2AEewbOV+wCZVy+DO0CAwEAAaNmMGQwEwYJKwYBBAGCNxQCBAYe
+  BABDAEEwCwYDVR0PBAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFL2p
+  u6kJ+VBpj9xrKa81qGUPp1xVMBAGCSsGAQQBgjcVAQQDAgEAMA0GCSqGSIb3DQEB
+  CwUAA4IBAQB5Nqusf0RL09l21Kax3Jjd9bkQIHUW564OZkwyGmvL4bqxpr0wlYQH
+  iliqf3u7guPuFtmtmqo8oyj3C66lMAjDtXSMAW/jR04BV6Nmfvwqa5wU5+IgQIPc
+  nRF0+IdLCgYX6EUNq144FamKt3Jca6JKX0C/a7BmJNVvt0b86BHSEMdlSrBvaUB/
+  fTYhCGX3LP3BoQJbsp1b1QxxggrjIr/wKIy0IwpfSrw0pfpvDKspFVfjVmt/OWCE
+  uGX2EuhM8LP04BL5JKynch+/CLydc2ihqMScHAxp3sv5NPfGSAsFJWSPWyPyzxMV
+  RNJvPnUL0E5pBXU/sNxYoMNpJuvggJ/Z
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIGYDCCBUigAwIBAgITHgAC6A9ik4IK+Fnn1wAAAALoDzANBgkqhkiG9w0BAQsF
+  ADBCMRMwEQYKCZImiZPyLGQBGRYDb3JnMRYwFAYKCZImiZPyLGQBGRYGb2N0ZmN1
+  MRMwEQYDVQQDEwpUU1RCUFZDQTAxMB4XDTIyMTAxMDIyMDU1N1oXDTIzMTAxMDIy
+  MDU1N1owgYExCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEPMA0GA1UEBxMGVHVz
+  dGluMSowKAYDVQQKEyFTY2hvb2xzRmlyc3QgRmVkZXJhbCBDcmVkaXQgVW5pb24x
+  DjAMBgNVBAsTBUlUU0lTMRgwFgYDVQQDEw9xdWF5Lm9jdGZjdS5vcmcwggEiMA0G
+  CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE0K2a+pk3D03VFMpFU4DHBZ6DxbhI
+  rLx82SaSLUkPfI+PsEnnYbwr8xmMPnDI+lddVm3nnzkoB4d3fLEQcNCNBgdGTS+9
+  sQmML6nE/B66ohS01girjej4BtwLHynubxe3U3Wc+LgrXPYd9h8XyxIAARMjnRSe
+  eAI1Y2iFG+ydY8DSgn/U79in5VpbJImxnHxEnvch3QKwEjfNSPuYUT41ZvazmNng
+  xjnY+Zpr0jrCxor1LGMktLpYr7hUed4fR2lLbHqgWzjkr+0tc852EO5+10dgyV7u
+  um3QBxM5iWzRph8RtQ6GgYuxTcCTek5gOg6CduKisP2PwTgTS9w+1Wd9AgMBAAGj
+  ggMNMIIDCTCBvAYDVR0RBIG0MIGxghhxdWF5LnNjaG9vbHNmaXJzdGZjdS5vcmeC
+  QXNmY3UtcXVheS1yZWdpc3RyeS1xdWF5LXF1YXktcmVnaXN0cnkuYXBwcy5xdWMw
+  MS1wLWRjMS5vY3RmY3Uub3JngkFzZmN1LXF1YXktcmVnaXN0cnktcXVheS1xdWF5
+  LXJlZ2lzdHJ5LmFwcHMucXVjMDEtcC1kYzIub2N0ZmN1Lm9yZ4IPcXVheS5vY3Rm
+  Y3Uub3JnMB0GA1UdDgQWBBQ5y3V3YeGmu0H/di45Tal9fekjtTAfBgNVHSMEGDAW
+  gBS9qbupCflQaY/caymvNahlD6dcVTCBygYDVR0fBIHCMIG/MIG8oIG5oIG2hoGz
+  bGRhcDovLy9DTj1UU1RCUFZDQTAxLENOPVRTVEJQVkNBMDEsQ049Q0RQLENOPVB1
+  YmxpYyUyMEtleSUyMFNlcnZpY2VzLENOPVNlcnZpY2VzLENOPUNvbmZpZ3VyYXRp
+  b24sREM9b2N0ZmN1LERDPW9yZz9jZXJ0aWZpY2F0ZVJldm9jYXRpb25MaXN0P2Jh
+  c2U/b2JqZWN0Q2xhc3M9Y1JMRGlzdHJpYnV0aW9uUG9pbnQwgbsGCCsGAQUFBwEB
+  BIGuMIGrMIGoBggrBgEFBQcwAoaBm2xkYXA6Ly8vQ049VFNUQlBWQ0EwMSxDTj1B
+  SUEsQ049UHVibGljJTIwS2V5JTIwU2VydmljZXMsQ049U2VydmljZXMsQ049Q29u
+  ZmlndXJhdGlvbixEQz1vY3RmY3UsREM9b3JnP2NBQ2VydGlmaWNhdGU/YmFzZT9v
+  YmplY3RDbGFzcz1jZXJ0aWZpY2F0aW9uQXV0aG9yaXR5MAsGA1UdDwQEAwIFoDA+
+  BgkrBgEEAYI3FQcEMTAvBicrBgEEAYI3FQiF/YZOhp/XfYLNlTCE17pLgZL1P4Fx
+  hOGiXYTgwmkCAWQCAQ4wEwYDVR0lBAwwCgYIKwYBBQUHAwEwGwYJKwYBBAGCNxUK
+  BA4wDDAKBggrBgEFBQcDATANBgkqhkiG9w0BAQsFAAOCAQEAVjVl3UnpSFhd4zdf
+  7PwgSDN8K/hZDrcF3il87bjb73hYF9ASKxyv6nlHMPhPNnoVRkcc86OamDnp29gM
+  Bd7n9Z51YMwcXtN1WwK7SZpXJGjmbvhuf1WAs4Mj9M9lLP7dRFPA9rI0m/h6QuZd
+  YZLHLiXv3wFP9wjLxOvblHJpEfGw740RBPOufbhmW4sk8p96lgV58CfZcVrIuvG5
+  Hm04a/F6YUalgscy9l92kYaJimebUZJ0IUqrS2fanR7b4wjE9AdieGvaOBtPjj5F
+  92N50aP0Ror6MovCrM7MTPFoI3RGs0Nm85ByiGZKi7pBajA+wdTiLPFizyi1oXNt
+  uwgKAw==
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIEhzCCA2+gAwIBAgIJAP3k7TqHuVtfMA0GCSqGSIb3DQEBCwUAMIGEMRUwEwYD
+  VQQKEwxWTXdhcmUsIEluYy4xKDAmBgNVBAsUH3ZDZW50ZXJTZXJ2ZXJfMjAxMy4w
+  NC4xN18yMjMyNDIxHjAcBgNVBAMTFVRTVEJQVlZDMDIub2N0ZmN1Lm9yZzEhMB8G
+  CSqGSIb3DQEJARYSc3VwcG9ydEB2bXdhcmUuY29tMB4XDTEzMDQxODA1NDExMVoX
+  DTIzMDQxNjA1NDExMVowgYQxFTATBgNVBAoTDFZNd2FyZSwgSW5jLjEoMCYGA1UE
+  CxQfdkNlbnRlclNlcnZlcl8yMDEzLjA0LjE3XzIyMzI0MjEeMBwGA1UEAxMVVFNU
+  QlBWVkMwMi5vY3RmY3Uub3JnMSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QHZtd2Fy
+  ZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC5vnadrgOhPT4T
+  rPMjWYVnIxrzkzGbttEiWcgfYNjrXrl71FrdYildcwXgF3NFrm5ZgQ1EMrVrq/ZD
+  BdY4vPg6jx938gYz4GFu8rtZegNl69sZQSda+p50nx/1JfoJNWcn/JAELDvRUHu6
+  1jxYpplImdLMIh5Lq+Eg6LsK2eIQ5e8dM89FW1/LFnZ4useTTCPxYEVSVctA95gr
+  GvKViNUbopmsqtE6MZDBO7t9ejNVhxqT+XVHk/H/DH+Bb5J8CiazDsQ37olA/kvm
+  GVnGn5v3BtdgKpH0DXMFsahIrKAXsctTsfDmg7a/+JIjkcexOU0R8Mo4B8qRFtO0
+  qNHMjhFVAgMBAAGjgfkwgfYwHQYDVR0OBBYEFC0i93xnZgDVoSSx7iWuy0g+QdV4
+  MIG5BgNVHSMEgbEwga6AFC0i93xnZgDVoSSx7iWuy0g+QdV4oYGKpIGHMIGEMRUw
+  EwYDVQQKEwxWTXdhcmUsIEluYy4xKDAmBgNVBAsUH3ZDZW50ZXJTZXJ2ZXJfMjAx
+  My4wNC4xN18yMjMyNDIxHjAcBgNVBAMTFVRTVEJQVlZDMDIub2N0ZmN1Lm9yZzEh
+  MB8GCSqGSIb3DQEJARYSc3VwcG9ydEB2bXdhcmUuY29tggkA/eTtOoe5W18wDAYD
+  VR0TBAUwAwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQELBQADggEBAJcKN0Ys
+  ova/PAc7FdoFc0mkngWLAPfUjmxPlqw9nDaUNbvqj4IHvtIwBFk3yC44ZKcsr8vv
+  KYwWdfqtsdMuyfxfRnA4Dmbxet4Nj4w/QPv9w5Yid6wmg3nWdmAAc3vxWY8AWzCk
+  sfYKrbtu+o51wri+ptJ8zFgDKncS5iwT0ubF+ZgtTxgvn74Wf0hTqgYTZ1KpIf07
+  SurB+R4kPcens/nY+Eu9H9Dtl2g767pTxS9x9/DGcPmNzJQwFGF0kuFIUfLpgHTU
+  OXIo0gOTVpb/roYRUA9y9YSTg6x3Mh6G0P+FzaSIzJaMsDcP76bhFe/z0ikITmF4
+  Y/crVofpJno2G+M=
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIDIjCCAgqgAwIBAgIJAPhLGcQOFORZMA0GCSqGSIb3DQEBCwUAMD4xLzAtBgNV
+  BAMTJkNBLCBDTj1UU1RCUFZWQzAyLCBkYz12c3BoZXJlLGRjPWxvY2FsMQswCQYD
+  VQQGEwJVUzAeFw0xMzEyMTIwNzIwMzdaFw0yMzEyMTAwNzIwMzdaMD4xLzAtBgNV
+  BAMTJkNBLCBDTj1UU1RCUFZWQzAyLCBkYz12c3BoZXJlLGRjPWxvY2FsMQswCQYD
+  VQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMKMcymc5NUj
+  YFAIZBrG0TFhOSb3snzLg1+gOfRdVIFx3uv8NmQ2I3GqqYrB4kHsA4dMPa3q7hDx
+  4PX2sp+syja/fWJZw5y55dG5q49YZZeyGyUDaW+ajIVYhh+3Hdf4glEUr5APXONH
+  bbHjgNOC6Yj2Wg5lZoO4t54mJGWAKhHp1Y0zhI9OEWXudwPb3rUUEKe7Oc6D7FqS
+  s0oUAhBDNFZJkXeiyfhw0zqL56xqR+Qq9NR/a50q+A5zhrhTpAwrZXjA3w/N5O0t
+  PFCkfI1sQHgSWs2qxoYIRcaTjZDbwhnJTJYLuk3V/8nj3qjj1YEoU6NqbIPZ8gxS
+  5Y9YpBhrWpkCAwEAAaMjMCEwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+  Af8wDQYJKoZIhvcNAQELBQADggEBAHMKydPTJ+jv6y+JMJ0ZUbNLJSRSNECCjQ/k
+  ESC5eOfevuRln3LRDGkmhqnMA+Kq924DmiRZF1MN3eleL5Q70eQl/g+27CtvtVk2
+  A+Nt3s1IANDCWp4CyRXiMm079WeHSaCwjByrKWwxmr0x3gcM4+qc4i8eOaCPVDmt
+  Q2x24I+0m6om07jtlfiSI8S3pdTs1Vp7gCCBG9aeobQKF5B4FnOF0EmwF6Lx3cFa
+  fQCXl1L1RVa1wrY5tRSx4mz+ju6PTmzGqel94ZihNzsRQHCcuPDEXYpST0mYJ1eQ
+  mS9TJ9uhZLTPGH1mILnx2NQFylZT3p8BLcXvEd2aIYz5wHGkgiE=
+  -----END CERTIFICATE-----
+imageContentSources:
+  - mirrors:
+    - {{ quay_registry_url }}/openshift/release
+    source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+  - mirrors:
+    - {{ quay_registry_url }}/openshift/release-images
+    source: quay.io/openshift-release-dev/ocp-release
+

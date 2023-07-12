@@ -1,0 +1,24 @@
+---
+- name: Get Subscriptions
+  kubernetes.core.k8s_info:
+    kind: subscription
+    api_version: operators.coreos.com/v1alpha1
+  register: subscriptions
+
+- name: Set subscription info facts
+  ansible.builtin.set_fact:
+    subscription_names: "{{ subscriptions.resources | map(attribute='metadata.name') | list }}"
+    subscription_namespace: "{{ subscriptions.resources | map(attribute='metadata.namespace') | list }}"
+
+- name: Patch Subscriptions to Manual
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: "{{ subscription_names[item] }}"
+        namespace: "{{ subscription_namespace[item] }}"
+      spec:
+        installPlanApproval: Manual
+  loop: "{{ range(0, subscription_names | length | int) | list }}"

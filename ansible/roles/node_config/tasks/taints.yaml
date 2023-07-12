@@ -5,9 +5,9 @@
     name: "{{ item }}"
     taints:
       - effect: NoExecute
-        key: "infra"
+        key: node-role.kubernetes.io/infra
         value: "reserved"
-      - effect: NoSchedule
-        key: "infra"
-        value: "reserved"
+      - key: node-role.kubernetes.io/infra
+        value: reserved
+        effect: NoSchedule
   loop: "{{ node_names }}"

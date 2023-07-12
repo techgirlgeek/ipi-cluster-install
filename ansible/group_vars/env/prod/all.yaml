@@ -1,0 +1,14 @@
+env: prod
+vcenter:
+  host: vcenterhost.fqdn
+  datastore: DS_Name
+  # following are from vaulted files
+  service_account_username: "{{ vsphereuname }}"
+  service_account_password: "{{ vspherepw }}"
+  datacenter: DC_Name
+group_sync_env:
+  bindDN: ldap_dn_email@domain.com
+
+# Only if argocd is used
+argocd:
+  dev_repo_url: https://argocd-dev.domain.org

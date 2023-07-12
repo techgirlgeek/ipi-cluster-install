@@ -1,0 +1,9 @@
+---
+- name: Update Cluster pull-secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    validate_certs: false
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/update_pullsecret/templates/pull_secret.yaml.j2') }}

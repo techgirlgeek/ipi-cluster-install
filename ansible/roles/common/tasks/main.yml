@@ -6,3 +6,4 @@
       - kubernetes-validate
       - openshift
   become: true
+  become_user: root

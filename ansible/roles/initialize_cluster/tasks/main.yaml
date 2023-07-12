@@ -3,7 +3,7 @@
   block:
     - name: Check for openshift-install
       ansible.builtin.stat:
-        path: "/usr/bin/openshift-install"
+        path: "/usr/local/bin/openshift-install"
       register: ocs_install
 
     - name: Fail if ocs_install does not exist
@@ -37,5 +37,5 @@
     mode: '0664'
 
 - name: Initialize IPI Cluster installation
-  ansible.builtin.command: "/usr/bin/openshift-install create cluster --dir={{ playbook_dir }}/install-dir --log-level=info"
+  ansible.builtin.command: "/usr/local/bin/openshift-install create cluster --dir={{ playbook_dir }}/install-dir --log-level=warn"
   changed_when: false

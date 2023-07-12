@@ -1,0 +1,170 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  annotations:
+    quay-component: quay
+    quay-operator-service-endpoint: 'http://quay-operator.openshift-operators.svc.cluster.local:7071'
+    quay-registry-hostname: {{ quay_registry_url }}
+  name: {{ quay_registry_name }}-{{ quay_app_name }}
+  namespace: {{ ns }}
+  labels:
+    app: quay
+    quay-component: quay
+    quay-operator/quayregistry: {{ quay_registry_name }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quay
+      quay-component: quay-app
+      quay-operator/quayregistry: {{ quay_registry_name }}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: quay
+        quay-component: quay-app
+        quay-operator/quayregistry: {{ quay_registry_name }}
+      annotations:
+        quay-buildmanager-hostname: ''
+        quay-operator-service-endpoint: 'http://quay-operator.openshift-operators.svc.cluster.local:7071'
+        quay-registry-hostname: {{ quay_registry_url }}
+    spec:
+      restartPolicy: Always
+      serviceAccountName: {{ quay_registry_name }}-quay-app
+      schedulerName: default-scheduler
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: quay-component
+                      operator: In
+                      values:
+                        - quay-app
+                topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 30
+      securityContext: {}
+      containers:
+        - resources:
+            limits:
+              cpu: '2'
+              memory: 8Gi
+            requests:
+              cpu: '2'
+              memory: 8Gi
+          readinessProbe:
+            httpGet:
+              path: /health/instance
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 10
+          terminationMessagePath: /dev/termination-log
+          name: quay-app
+          livenessProbe:
+            httpGet:
+              path: /health/instance
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 10
+          env:
+            - name: QE_K8S_CONFIG_SECRET
+              value: {{ quay_registry_name }}-quay-config-secret
+            - name: QE_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: DEBUGLOG
+              value: 'false'
+            - name: WORKER_COUNT_WEB
+              value: '4'
+            - name: WORKER_COUNT_SECSCAN
+              value: '2'
+            - name: WORKER_COUNT_REGISTRY
+              value: '8'
+            - name: HTTP_PROXY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ quay_registry_name }}-quay-proxy-config
+                  key: HTTP_PROXY
+            - name: HTTPS_PROXY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ quay_registry_name }}-quay-proxy-config
+                  key: HTTPS_PROXY
+            - name: NO_PROXY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ quay_registry_name }}-quay-proxy-config
+                  key: NO_PROXY
+            - name: QUAY_VERSION
+              value: v3.8.6
+          ports:
+            - containerPort: 8443
+              protocol: TCP
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8081
+              protocol: TCP
+            - containerPort: 9091
+              protocol: TCP
+            - containerPort: 55443
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          startupProbe:
+            httpGet:
+              path: /health/instance
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 20
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 10
+          volumeMounts:
+            - name: config
+              mountPath: /conf/stack
+            - name: extra-ca-certs
+              readOnly: true
+              mountPath: /conf/stack/extra_ca_certs
+          terminationMessagePolicy: File
+          image: >-
+            registry.redhat.io/quay/quay-rhel8@sha256:c843ab8d6c41dac4f564ece816623b953d4b4d21e40f64bf3e07d4b029ec4dee
+          args:
+            - registry-nomigrate
+      serviceAccount: {{ quay_registry_name }}-quay-app
+      volumes:
+        - name: config
+          projected:
+            sources:
+              - secret:
+                  name: {{ quay_registry_name }}-quay-config-secret
+              - secret:
+                  name: {{ quay_registry_name }}-quay-config-tls
+            defaultMode: 420
+        - name: extra-ca-certs
+          projected:
+            sources:
+              - configMap:
+                  name: {{ quay_registry_name }}-cluster-service-ca
+              - configMap:
+                  name: {{ quay_registry_name }}-cluster-trusted-ca
+              - secret:
+                  name: {{ quay_registry_name }}-extra-ca-certs
+            defaultMode: 420
+      dnsPolicy: ClusterFirst
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

@@ -1,0 +1,8 @@
+---
+- name: Apply Cluster Monitoring ConfigMap
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('file',
+      '{{ playbook_dir }}/roles/monitoring_configs/files/cluster-mon-config-cm.yaml')
+      }}

@@ -1,0 +1,140 @@
+---
+- name: Deploy network template
+  kubernetes.core.k8s:
+    state: present
+    namespace: openshift-config
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/network_policy/templates/network-template.yaml.j2') }}
+
+- name: Patch Cluster to use Network Policy Template
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      "{{ playbook_dir }}/roles/network_policy/templates/patch-cluster.yaml.j2")
+      }}
+
+# - name: Pause until network policy is in place
+#   ansible.builtin.pause:
+
+# - name: Get existing projects
+#   kubernetes.core.k8s_info:
+#     kind: project
+#     api_version: project.openshift.io/v1
+#   register: existing_projects
+
+# - name: Set project name fact
+#   ansible.builtin.set_fact:
+#     project_names: "{{ existing_projects.resources | map(attribute='metadata.name') | list }}"
+
+# - name: Create new projects
+#   kubernetes.core.k8s:
+#     state: present
+#     definition:
+#       kind: ProjectRequest
+#       apiVersion: project.openshift.io/v1
+#       metadata:
+#         name: "{{ item }}"
+#   loop:
+#     - backbase
+#     - foundation
+#     - value-add
+#   when: item not in project_names
+
+# - name: Sleep for 5 seconds and continue with play
+#   ansible.builtin.wait_for:
+#     timeout: 5
+
+# - name: Get new projects
+#   kubernetes.core.k8s_info:
+#     kind: project
+#     api_version: project.openshift.io/v1
+#   register: new_projects
+
+# - name: Get project names after ArgoCD Projects Created
+#   ansible.builtin.set_fact:
+#     project_names_argocd: "{{ new_projects.resources | map(attribute='metadata.name') | list }}"
+
+# - name: Update new projects with ArgoCD label
+#   kubernetes.core.k8s:
+#     state: present
+#     definition:
+#       apiVersion: v1
+#       kind: Namespace
+#       metadata:
+#         name: "{{ item }}"
+#         labels:
+#           argocd.argoproj.io/managed-by: ocp4-gitops-apps
+#   loop:
+#     - backbase
+#     - foundation
+#     - value-add
+#   when: item in project_names_argocd
+
+# - name: Create custom network policies
+#   kubernetes.core.k8s:
+#     state: present
+#     definition: |
+#       {{ lookup("template",
+#       "{{ playbook_dir }}/roles/network_policy/templates/namespace-net-policy.yaml.j2",
+#       template_vars=dict(
+#       basens="{{ item.name }}",
+#       connectns="{{ item.secondary }}"
+#       )) }}
+#   loop:
+#     - name: backbase
+#       secondary: foundation
+#     - name: foundation
+#       secondary: value-add
+#     - name: value-add
+#       secondary: foundation
+#     - name: value-add
+#       secondary: backbase
+
+# - name: Add Egress IPs to Netnamespaces
+#   kubernetes.core.k8s:
+#     state: present
+#     definition: |
+#       {{ lookup("template",
+#       "{{ playbook_dir }}/roles/network_policy/templates/egress-ips.yaml.j2",
+#       template_vars=dict(
+#       name="{{ item.name }}",
+#       ip="{{ item.ip }}"
+#       )
+#       ) }}
+#   loop:
+#     - name: backbase
+#       ip: "{{ network_policy.egress_ips.backbase }}"
+#     - name: foundation
+#       ip: "{{ network_policy.egress_ips.foundation }}"
+#     - name: value-add
+#       ip: "{{ network_policy.egress_ips.valueadd }}"
+#   when: cluster != 'lab'
+
+- name: Run command locally to get Worker Node Names
+  delegate_to: localhost
+  block:
+    - name: Get worker nodes
+      kubernetes.core.k8s_info:
+        kind: "Node"
+        validate_certs: false
+        label_selectors:
+          - "node-role.kubernetes.io/worker"
+          - "node-role.kubernetes.io/infra!="
+          - "node-role.kubernetes.io/storage!="
+      register: worker_nodes
+
+    - name: Set worker node name fact
+      ansible.builtin.set_fact:
+        node_names: "{{ worker_nodes.resources | map(attribute='metadata.name') | list }}"
+
+    - name: Add Egress CIDR to worker nodes
+      kubernetes.core.k8s:
+        state: present
+        definition: |
+          {{ lookup('template',
+          "{{ playbook_dir }}/roles/network_policy/templates/egress-cidr.yaml.j2")
+          }}
+      loop: "{{ node_names }}"
+      when: cluster != 'lab'

@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: deploy-appset
+  namespace: {{ ns }}
+spec:
+  destination:
+    namespace: {{ ns }}
+    server: https://kubernetes.default.svc
+  project: olb
+  source:
+    path: "src/applicationsets/kustomize-appset-global/{{ cluster }}"
+    repoURL: {{ argocd.dev_repo_url }}
+    targetRevision: main
+  syncPolicy:
+    automated:
+      selfHeal: true

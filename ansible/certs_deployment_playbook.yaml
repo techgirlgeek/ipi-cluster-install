@@ -11,6 +11,8 @@
   hosts: localhost
   gather_facts: false
 
+  # Uncomment K8S line if updating certs
+  # Leave commented for initial cluster
   environment:
     # K8S_AUTH_SSL_CA_CERT: "{{ K8S_AUTH_SSL_CA_CERT }}"
 
@@ -18,6 +20,10 @@
     api_cert_dir: "{{ catalog_dir }}/cert-patches/openshift-api-certificate/overlays/{{ cluster }}"
 
   tasks:
+
+    - name: Check cert existence
+      ansible.builtin.debug:
+        var: K8S_AUTH_SSL_CA_CERT
 
     - name: Create and apply security certificates for cluster
       ansible.builtin.import_role:

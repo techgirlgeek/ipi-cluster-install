@@ -1,0 +1,15 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    name: {{ item.name }}
+  name: {{ item.name }}
+  namespace: kube-system
+rules:
+- apiGroups:
+  - ""
+  resourceNames: {{ item.resourceNames }}
+  resources:
+  - {{ item.resources }}
+  verbs: {{ item.verbs }}

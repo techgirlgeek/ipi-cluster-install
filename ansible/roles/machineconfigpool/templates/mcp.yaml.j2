@@ -9,4 +9,11 @@ spec:
   nodeSelector:
     matchLabels:
       node-role.kubernetes.io/{{ item }}: ""
+{% if item == 'storage' %}
+      node-role.kubernetes.io/infra: ""
+{% elif item == 'infra' %}
+    matchExpressions:
+      - key: node-role.kubernetes.io/storage
+        operator: DoesNotExist
+{% endif %}
   paused: false

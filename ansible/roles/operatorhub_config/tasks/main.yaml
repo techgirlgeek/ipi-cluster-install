@@ -1,0 +1,51 @@
+---
+- name: Create Quay Secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/operatorhub_config/templates/quay-secret.yaml.j2') }}"
+
+- name: Get Catalog Source URL
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: CatalogSource
+      metadata:
+        name: redhat-operator-index-1
+        namespace: openshift-marketplace
+      spec:
+        image: "{{ quay_registry_url }}/redhat/redhat-operator-index:v{{ operatorhub.ocp_main_ver }}"
+        sourceType: grpc
+        displayName: redhat-operator-index
+        publisher: SchoolsFirst FCU
+        secrets:
+          - quay-admin
+        updateStrategy:
+          registryPoll:
+            interval: 30m
+
+- name: Get Image Source Info
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: operator.openshift.io/v1alpha1
+      kind: ImageContentSourcePolicy
+      metadata:
+        labels:
+          operators.openshift.org/catalog: "true"
+        name: operator-0
+      spec:
+        repositoryDigestMirrors:
+          - mirrors:
+              - "{{ quay_registry_url }}"
+            source: registry.redhat.io
+
+- name: Use Kustomize to disable default operators
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition: "{{ lookup('kubernetes.core.kustomize', dir=operatorhub_patch_dir) }}"
+  register: operatorhub_patch

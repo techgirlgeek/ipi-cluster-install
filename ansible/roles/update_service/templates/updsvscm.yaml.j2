@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ name }}
+  namespace: {{ ns }}
+immutable: false
+data:
+  updateservice-registry: |
+    {{ ca_bundle_crt | indent(width=4) }}
+    {{ quay_crt | indent(width=4) }}

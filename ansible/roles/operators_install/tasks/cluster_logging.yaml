@@ -1,0 +1,14 @@
+- name: Run command locally
+  delegate_to: localhost
+  when: operator == 'cluster-logging'
+  block:
+    - name: Enable Logging Console Plugin
+      kubernetes.core.k8s_json_patch:
+        kind: Console
+        api: operator.openshift.io/v1
+        name: cluster
+        namespace: openshift-storage
+        patch:
+          - op: add
+            path: /spec/plugins
+            value: ["odf-console", "logging-view-plugin"]

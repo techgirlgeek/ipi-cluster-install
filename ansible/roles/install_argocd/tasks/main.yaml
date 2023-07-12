@@ -1,0 +1,42 @@
+---
+- name: ArgoCD Secret
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/install_argocd/templates/argocd-secret.yaml.j2') }}
+
+- name: Install ArgoCD API
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/install_argocd/templates/argocd-install.yaml.j2') }}
+
+- name: Install ClusterRole for ArgoCD
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/install_argocd/files/argocd-clusterrole.yaml') }}
+
+- name: Install ClusterRoleBindings for ArgoCD
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/install_argocd/templates/argocd-clusterrolebinding.yaml.j2') }}
+
+- name: Install ArgoCD Dev Application
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/install_argocd/templates/argocd-app.yaml.j2') }}
+
+- name: Install Deploy Appset
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/install_argocd/templates/argocd-deploy.yaml.j2') }}

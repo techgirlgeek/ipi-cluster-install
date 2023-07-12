@@ -1,7 +1,7 @@
 ---
 - name: Create LDAP Group Sync Namespace
   kubernetes.core.k8s:
-    name: "{{ group_sync.namespace }}"
+    name: "{{ group_sync.ns }}"
     api_version: v1
     kind: Namespace
     state: present
@@ -14,7 +14,7 @@
       kind: ServiceAccount
       metadata:
         name: ldap-group-syncer
-        namespace: "{{ group_sync.namespace }}"
+        namespace: "{{ group_sync.ns }}"
         labels:
           app: cronjob-ldap-group-sync
 
@@ -53,29 +53,40 @@
       subjects:
         - kind: ServiceAccount
           name: ldap-group-syncer
-          namespace: "{{ group_sync.namespace }}"
+          namespace: "{{ group_sync.ns }}"
       roleRef:
         apiGroup: rbac.authorization.k8s.io
         kind: ClusterRole
         name: ldap-group-syncer
 
+- name: Create ldap-ca-config-map
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/LDAPgroupSync/templates/ldap-ca-config-map.yaml.j2') }}"
+
 - name: Create ldap-group-syncer ConfigMap
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig }}"
     state: present
-    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-group-syncer-cm.yaml.j2') }}"
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/LDAPgroupSync/templates/ldap-group-syncer-cm.yaml.j2') }}"
 
 - name: Create ldap-group-whitelist
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig }}"
     state: present
-    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-group-syncer-whitelist.yaml.j2') }}"
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/LDAPgroupSync/templates/ldap-group-syncer-whitelist.yaml.j2') }}"
 
 - name: Create ldap-sync-secret
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig }}"
     state: present
-    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/groupSyncCMs/templates/ldap-sync-secret.yaml.j2') }}"
+    definition: "{{ lookup('template', '{{ playbook_dir }}/roles/LDAPgroupSync/templates/ldap-sync-secret.yaml.j2') }}"
+
+- name: Check build vars
+  ansible.builtin.debug:
+    msg: "Executing {{ build }} environment"
+  tags: debug
 
 - name: Deploy LDAP CronJob and Resources
   kubernetes.core.k8s:

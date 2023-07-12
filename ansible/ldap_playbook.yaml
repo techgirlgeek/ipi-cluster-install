@@ -11,7 +11,12 @@
   gather_facts: false
 
   vars:
-    ldap_dir: "{{ catalog_dir }}/oauth/overlays/ldap"
+    ldap_dir:
+      "{%- if env == 'lab' -%}
+        {{ catalog_dir }}/oauth/overlays/ldap/non_prod
+      {%- else -%}
+        {{ catalog_dir }}/oauth/overlays/ldap/{{ env }}
+      {%- endif -%}"
 
   environment:
     K8S_AUTH_SSL_CA_CERT: "{{ K8S_AUTH_SSL_CA_CERT }}"

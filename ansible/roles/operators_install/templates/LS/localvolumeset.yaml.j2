@@ -1,0 +1,25 @@
+apiVersion: local.storage.openshift.io/v1alpha1
+kind: LocalVolumeSet
+metadata:
+  name: {{ storage.storageclass }}
+  namespace: openshift-local-storage
+spec:
+  deviceInclusionSpec:
+    deviceTypes:
+    - disk
+    - part
+    minSize: 1Gi
+  nodeSelector:
+    nodeSelectorTerms:
+      - matchExpressions:
+        - key: cluster.ocs.openshift.io/storage
+          operator: In
+          values:
+            - ""
+  storageClassName: {{ storage.storageclass }}
+  tolerations:
+    - effect: NoSchedule
+      key: node.ocs.openshift.io/storage
+      operator: Equal
+      value: 'true'
+  volumeMode: Block

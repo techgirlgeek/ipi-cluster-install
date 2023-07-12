@@ -1,0 +1,41 @@
+---
+- name: Show me the vars
+  debug:
+    msg:
+    - "Install mode: {{ install_mode }}"
+    - "Operator Name: {{ operator }}"
+    - "Namespace: {{ ns }}"
+    - "Channel: {{channel }}"
+
+- name: Create update service OperatorGroup
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/operators_install/templates/operatorgroup.yaml.j2')
+      }}
+  when: install_mode != 'AllNamespaces'
+
+- name: Install Operator Subscription
+  kubernetes.core.k8s:
+    state: present
+    definition: |
+      {{ lookup('template',
+      '{{ playbook_dir }}/roles/operators_install/templates/subscription.yaml.j2')
+      }}
+
+- name: Apply Local Storage Operator Configs
+  ansible.builtin.include_tasks: local_storage.yaml
+  tags: always
+
+- name: Apply Cluster Logging patch
+  ansible.builtin.include_tasks: cluster_logging.yaml
+  tags: always
+
+- name: Apply ODF Configs
+  ansible.builtin.include_tasks: odf.yaml
+  tags: always
+
+- name: Apply ES Configs
+  ansible.builtin.include_tasks: es.yaml
+  tags: always

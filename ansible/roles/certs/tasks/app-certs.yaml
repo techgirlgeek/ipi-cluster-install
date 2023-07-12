@@ -1,12 +1,14 @@
 ---
-- name: Create openshift-api-secret
+- name: Create openshift ingress secret
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig }}"
+    validate_certs: false
     state: present
     definition: "{{ lookup('template', '{{ playbook_dir }}/roles/certs/templates/ingress-cert-secret.yaml.j2') }}"
 
 - name: Apply Wildcard Cert to Cluster
   kubernetes.core.k8s:
+    validate_certs: false
     state: present
     definition:
       apiVersion: v1

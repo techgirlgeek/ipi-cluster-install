@@ -5,4 +5,4 @@ metadata:
   namespace: openshift-config
 data:
   ca.crt: |
-    {{ ldap_ca_crt | indent(width=4) }}
+    {{ ca_bundle_crt | indent(width=4) }}

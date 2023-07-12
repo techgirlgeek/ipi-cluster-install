@@ -20,22 +20,33 @@ spec:
       creationTimestamp: null
       labels:
         machine.openshift.io/cluster-api-cluster: {{ infraID }}
-        machine.openshift.io/cluster-api-machine-role: {{ role_assigned }}
-        machine.openshift.io/cluster-api-machine-type: {{ role_assigned }}
+        machine.openshift.io/cluster-api-machine-role: infra
+        machine.openshift.io/cluster-api-machine-type: infra
         machine.openshift.io/cluster-api-machineset: {{ infraID }}-{{ role_assigned }}
     spec:
       metadata:
         creationTimestamp: null
         labels:
           node-role.kubernetes.io/{{ role_assigned }}: ""
+{% if role_assigned == 'storage' %}
+          node-role.kubernetes.io/infra: ""
+          cluster.ocs.openshift.io/{{ role_assigned }}: ""
+          cluster.ocs.openshift.io/openshift-{{ role_assigned }}: ""
+{% endif %}
 {% if role_assigned == 'infra' %}
       taints:
-      - key: {{ role_assigned }}
+      - key: node-role.kubernetes.io/{{ role_assigned }}
         effect: NoSchedule
         value: "reserved"
-      - key: {{ role_assigned }}
+      - key: node-role.kubernetes.io/{{ role_assigned }}
         effect: NoExecute
         value: "reserved"
+{% endif %}
+{% if role_assigned == 'storage' %}
+      taints:
+      - key: node.ocs.openshift.io/{{ role_assigned }}
+        effect: NoSchedule
+        value: "true"
 {% endif %}
       providerSpec:
         value:
@@ -44,21 +55,39 @@ spec:
             name: vsphere-cloud-credentials
           diskGiB: 120
           kind: VSphereMachineProviderSpec
-          memoryMiB: 8192
+{% if role_assigned == 'storage' %}
+          memoryMiB: {{ vmconfig.storage.ram }}
+{% elif role_assigned == 'infra' %}
+          memoryMiB: {{ vmconfig.infra.ram }}
+{% endif %}
           metadata:
             creationTimestamp: null
           network:
             devices:
-            - networkName: {{ vcenter.network }}
-          numCPUs: 4
+            - networkName: {{ vcenter_cluster.network }}
+{% if role_assigned == 'storage' %}
+          numCPUs: {{ vmconfig.storage.cpu }}
+          numCoresPerSocket: {{ vmconfig.storage.core }}
+{% elif role_assigned == 'infra' %}
+          numCPUs: {{ vmconfig.infra.cpu }}
+          numCoresPerSocket: {{ vmconfig.infra.core }}
+{% else %}
           numCoresPerSocket: 1
+{% endif %}
           snapshot: ""
           template: {{ vcenter_cluster.template_name }}
           userDataSecret:
             name: worker-user-data
           workspace:
+{% if cluster == "mprod" or cluster == 'mquay'  %}
+            datacenter: {{ vcenter.m_datacenter }}
+            datastore: {{ vcenter.m_datastore }}
+            server: {{ vcenter.m_host }}
+            resourcePool: /{{ vcenter.m_datacenter }}/host/{{ vcenter_cluster.cluster_name }}/Resources
+{% else %}
             datacenter: {{ vcenter.datacenter }}
             datastore: {{ vcenter.datastore }}
-            folder: /{{ vcenter.datacenter }}/vm/{{ vcenter_cluster.folder_name }}
-            server: {{ vcenter.ip }}
-            resourcePool: /{{ vcenter.datacenter }}/host/{{ vcenter.cluster_name }}/Resources
+            server: {{ vcenter.host }}
+            resourcePool: /{{ vcenter.datacenter }}/host/{{ vcenter_cluster.cluster_name }}/Resources
+{% endif %}
+            folder: {{ vcenter_cluster.folder_path }}{{ vcenter_cluster.folder_name }}
