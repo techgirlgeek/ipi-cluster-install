@@ -1,13 +1,8 @@
-all:
-  hosts:
-    localhost:
-        ansible_connection: local
-  vars:
-    ansible_python_interpreter: /usr/bin/python
-  children:
-    webservers:
-      hosts:
-        localhost:
-    registries:
-      hosts:
-        localhost:
+[control_node]
+localhost
+
+[webservers:children]
+control_node
+
+[registries:children]
+control_node
