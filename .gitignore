@@ -7,3 +7,4 @@ ansible/install-dir
 #Sansible/kustomize-dir/groups-role-bindings/
 #ansible/kustomize-dir/ldapcron/
 #ansible/kustomize-dir/oauth/
+ansible.orig
