@@ -14,10 +14,10 @@
         preferredUsername:
         - sAMAccountName
       bindDN: >-
-        CN=OpenShift LDAP PROD Service,OU=PROD,OU=Service Accounts,OU=DomainOU,DC=octfcu,DC=org
+        CN=OpenShift LDAP PROD Service,OU=PROD,OU=Service Accounts,OU=DomainOU,DC=domain,DC=org
       bindPassword:
         name: ldap-secret
       ca:
         name: ca-config-map
       insecure: false
-      url: "ldaps://octfcu.org/DC=OCTFCU,DC=ORG?sAMAccountName?sub?(|(memberOf=CN=IT-Compute-RHO-Super-Admins,OU=Protected,OU=Groups,OU=DomainOU,DC=octfcu,DC=org)(memberOf=CN=EAS-RHO-Basic-Admins,OU=Protected,OU=Groups,OU=DomainOU,DC=octfcu,DC=org)(memberOf=CN=IT-Network-RHO-Basic-Admins,OU=Protected,OU=Groups,OU=DomainOU,DC=octfcu,DC=org)(memberOf=CN=RHO-CLUSTER-READ,OU=OpenShiftTemp,OU=Groups,OU=DomainOU,DC=octfcu,DC=org)(memberOf=CN=RHO-PRJ-STG-DXT-ADMIN,OU=OpenShiftTemp,OU=Groups,OU=DomainOU,DC=octfcu,DC=org)(memberOf=CN=RHO-PRJ-STG-DXT-EDIT,OU=OpenShiftTemp,OU=Groups,OU=DomainOU,DC=octfcu,DC=org)(memberOf=CN=RHO-PRJ-STG-DXT-READ,OU=OpenShiftTemp,OU=Groups,OU=DomainOU,DC=octfcu,DC=org))"
+      url: "ldaps://domain.org/DC=DOMAIN,DC=ORG?sAMAccountName?sub?(|(memberOf=member_info))"

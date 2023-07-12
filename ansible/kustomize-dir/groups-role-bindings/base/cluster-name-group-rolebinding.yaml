@@ -12,7 +12,7 @@ subjects:
     name: IT-Compute-RHO-Super-Admins
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
-    name: EAS-RHO-Basic-Admins
+    name: Admins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
