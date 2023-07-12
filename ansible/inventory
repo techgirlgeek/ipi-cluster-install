@@ -1,8 +1,17 @@
-[control_node]
+[dev]
 localhost
 
-[webservers:children]
-control_node
+[lab]
+localhost
 
-[registries:children]
-control_node
+[test]
+localhost
+
+[stage]
+localhost
+
+[prod]
+localhost
+
+[quay]
+localhost

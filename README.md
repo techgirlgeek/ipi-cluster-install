@@ -233,7 +233,7 @@ nodeconfig_playbook.yaml
 
 ```sh
 ansible-playbook -i inventory \
--e @./group_vars/quay.yaml \
+-e @./group_vars/quay-sync.yaml \
 -e "cluster=[cluster]" \
 --vault-password-file=../resources/vault-password.txt \
 operators_config_playbook.yaml
