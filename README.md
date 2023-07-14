@@ -71,10 +71,6 @@ initialize_cluster.yaml
 
 **NOTE**: For lab add `-e @./group_vars/env/lab/all.yaml \`
 
-**NOTE**: For Quay clusters replace pull secret line with `-e @./group_vars/quay-pull-secret.yaml \`
-
-**NOTE**: For Mesa installations, environment variable is 'mprod'
-
 ## Before Moving to Next Steps
 
 Ensure you get the folder and template names for the new cluster you just built, and update the variables in the cluster specific all.yaml files
